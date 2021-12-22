@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.buy.purchaseorder.dao.PurchaseOrderDAO">
+	<!-- ###발주서 순서대로### -->
+	<sql id="orderByOrd">
+		ORDER BY ORD_NUM
+	</sql>
+	
+<sql id="searchFrag">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="dateStart neq null">
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+                <![CDATA[
+                   ORD_DATE BETWEEN TO_DATE(#{dateStart}, 'YYYY-MM-DD') AND TO_DATE(#{dateEnd}, 'YYYY-MM-DD')+0.99999
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(buyerName)">
+                AND INSTR(BUYER_NAME, #{buyerName}) > 0
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(deptName)">
+                AND INSTR(DEPT_NAME, #{deptName}) > 0
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(empName)">
+                AND INSTR(EMP_NAME, #{empName}) > 0
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(finishYN)">
+                AND INSTR(FINISH_YN, #{finishYN}) > 0
+             </if>
+          </if>      
+       </trim>
+   </sql>
+<!--    새로운 문서 체크 -->
+   <insert id="insertCheck" parameterType="OrderVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{ordNum},'N',SYSDATE)
+	</insert>
+
+   <!-- 발주서 리스트 조회 -->
+	<select id="selectOrderList" parameterType="HubSearchVO" resultType="OrderVO">
+		SELECT ORD_NUM
+              , TO_CHAR(ORD_DATE,'YYYY') AS BUY_YY
+          	  , TO_CHAR(ORD_DATE,'MM') AS BUY_MM
+          	  , TO_CHAR(ORD_DATE,'DD') AS BUY_DD
+              ,BUYER_CODE
+              ,BUYER_NAME
+              ,DEPT_NAME
+              ,EMP_NAME
+              ,ORD_VAT
+              ,ORD_RESULT
+              ,ORD_FINISH
+	     FROM "ORDER"
+	<include refid="searchFrag" />	
+	<include refid="orderByOrd" />	
+	</select>
+	
+	<!-- 발주서 선택 -->
+	<select id="selectOrder" parameterType="OrderVO" resultType="OrderVO">
+		SELECT ORD_NUM
+			  ,ORD_DATE
+              ,BUYER_CODE
+              ,BUYER_NAME
+              ,DEPT_NAME
+              ,EMP_NAME
+              ,ORD_VAT
+              ,ORD_RESULT
+              ,ORD_FINISH
+         FROM "ORDER"
+        WHERE ORD_NUM=#{ordNum}
+	</select>
+	
+	<!-- 발주서 원자재 리스트 조회 -->
+	<select id="selectOrderRawsList" parameterType="OrderVO" resultType="OrderRawsVO">
+		SELECT ORD_NO
+              ,ORD_NUM
+              ,RAWS_CODE
+              ,RAWS_NAME
+              ,GCOMM_NAME
+              ,UCOMM_NAME
+              ,ORR_DATE
+              ,ORR_QTY
+              ,ORR_UPRICE
+              ,ORR_SP
+              ,ORR_VAT
+              ,ORR_SUMCOST
+              ,PROJ_NAME
+		 FROM ORDER_RAWS
+		WHERE ORD_NUM=#{ordNum}
+		ORDER BY ORR_DATE
+	</select>
+	
+	<!-- 발주서 원자재 선택 -->
+	<select id="selectOrderRaws" parameterType="OrderRawsVO" resultType="OrderRawsVO">
+	      SELECT ORD_NO
+                ,ORD_NUM
+                ,RAWS_CODE
+                ,RAWS_NAME
+                ,GCOMM_NAME
+                ,UCOMM_NAME
+                ,ORR_DATE
+                ,ORR_QTY
+                ,ORR_UPRICE
+                ,ORR_SP
+                ,ORR_VAT
+                ,ORR_SUMCOST
+                ,PROJ_NAME
+                ,ICODE_NAME
+		   FROM ORDER_RAWS
+		  WHERE ORD_NO=#{ordNo}
+	</select>
+	
+	<insert id="insertOrder" parameterType="OrderVO">
+		<selectKey resultType="String" keyProperty="ordNum" order="BEFORE">
+			SELECT 'OD'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(MAX(TO_NUMBER(SUBSTR(ORD_NUM,9,10))),0)+ 1),2,0)
+			  FROM "ORDER"
+			WHERE SUBSTR(ORD_NUM,1,8)='OD'||TO_CHAR(SYSDATE,'YYMMDD')
+		</selectKey>
+	INSERT INTO "ORDER"(
+		        ORD_NUM
+               ,ORD_DATE
+               ,BUYER_CODE
+               ,BUYER_NAME
+               ,DEPT_NAME
+               ,EMP_NAME
+               ,ORD_VAT
+               ,ORD_RESULT
+               ,ORD_FINISH
+               )VALUES(
+               #{ordNum,jdbcType=VARCHAR}
+			 , TO_DATE(#{ordDate,jdbcType=DATE},'YYYY/MM/DD')
+			 , #{buyerCode,jdbcType=NUMERIC}
+			 , #{buyerName,jdbcType=VARCHAR}
+			 , #{deptName,jdbcType=VARCHAR}
+			 , #{empName,jdbcType=VARCHAR}
+			 , #{ordVat,jdbcType=VARCHAR}
+			 , #{ordResult,jdbcType=VARCHAR}
+			 , #{ordFinish,jdbcType=VARCHAR}
+               )
+	</insert>
+	
+	<!--발주서 원자재 등록 -->
+	<insert id="insertOrderRaws" parameterType="OrderRawsVO">
+		<selectKey resultType="int" keyProperty="ordNo" order="BEFORE">
+			SELECT NVL(MAX(ORD_NO),0) + 1
+			FROM ORDER_RAWS
+		</selectKey>
+		INSERT INTO ORDER_RAWS(
+					     ORD_NO
+                        ,ORD_NUM
+                        ,RAWS_CODE
+                        ,RAWS_NAME
+                        ,GCOMM_NAME
+                        ,UCOMM_NAME
+                        ,ORR_DATE
+                        ,ORR_QTY
+                        ,ORR_UPRICE
+                        ,ORR_SP
+                        ,ORR_VAT
+                        ,ORR_SUMCOST
+                        ,PROJ_NAME
+                        ,ICODE_NAME
+		)VALUES(
+		  #{ordNo,jdbcType=NUMERIC}
+		, #{ordNum,jdbcType=VARCHAR}
+		, #{rawsCode,jdbcType=VARCHAR}
+		, #{rawsName,jdbcType=VARCHAR}
+		, #{gcommName,jdbcType=VARCHAR}
+		, #{ucommName,jdbcType=VARCHAR}
+		, #{orrDate,jdbcType=DATE}
+		, #{orrQty,jdbcType=NUMERIC}
+		, #{orrUprice,jdbcType=NUMERIC}
+		, #{orrSp,jdbcType=NUMERIC}
+		, #{orrVat,jdbcType=NUMERIC}
+		, #{orrSumcost,jdbcType=NUMERIC}
+		, #{projName,jdbcType=VARCHAR}
+		, #{icodeName,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<update id="updateOrder">
+		UPDATE "ORDER"
+		  SET 
+		      ORD_NUM=#{ordNum,jdbcType=VARCHAR}
+			, ORD_DATE=#{ordDate,jdbcType=DATE}
+			, BUYER_CODE=#{buyerCode,jdbcType=NUMERIC}
+			, BUYER_NAME=#{buyerName,jdbcType=VARCHAR}
+			, DEPT_NAME=#{deptName,jdbcType=VARCHAR}
+			, EMP_NAME=#{empName,jdbcType=VARCHAR}
+			, ORD_VAT=#{ordVat,jdbcType=VARCHAR}
+			, ORD_RESULT=#{ordResult,jdbcType=VARCHAR}
+			, ORD_FINISH=#{ordFinish,jdbcType=VARCHAR}
+		WHERE ORD_NUM=#{ordNum}
+	</update>
+	
+	<update id="updateOrderRaws">
+	 UPDATE ORDER_RAWS
+		SET 
+		    ORD_NO=#{ordNo,jdbcType=NUMERIC} 
+		   ,ICODE_NAME=#{icodeName,jdbcType=NUMERIC}
+		   ,ORD_NUM=#{ordNum,jdbcType=VARCHAR}
+		   ,RAWS_CODE=#{rawsCode,jdbcType=VARCHAR}
+		   ,RAWS_NAME=#{rawsName,jdbcType=VARCHAR}
+		   ,GCOMM_NAME=#{gcommName,jdbcType=VARCHAR}
+		   ,UCOMM_NAME=#{ucommName,jdbcType=VARCHAR}
+		   ,ORR_DATE=#{orrDate,jdbcType=DATE}
+		   ,ORR_QTY=#{orrQty,jdbcType=NUMERIC}
+		   ,ORR_UPRICE=#{orrUprice,jdbcType=NUMERIC}
+		   ,ORR_SP=#{orrSp,jdbcType=NUMERIC}
+		   ,ORR_VAT=#{orrVat,jdbcType=NUMERIC}
+		   ,ORR_SUMCOST=#{orrSumcost,jdbcType=NUMERIC}
+		   ,PROJ_NAME=#{projName,jdbcType=VARCHAR}
+     WHERE ORD_NO=#{ordNo}
+	</update>
+	
+	<!-- 발주서 삭제 -->
+	<delete id="deleteOrder" parameterType="OrderVO">
+		DELETE FROM "ORDER"
+		 WHERE ORD_NUM=#{ordNum,jdbcType=VARCHAR} 
+	</delete>
+	
+	<!-- 발주서 원자재 삭제 -->
+	<delete id="deleteOrderRaws" parameterType="OrderRawsVO">
+		DELETE FROM ORDER_RAWS
+		 WHERE ORD_NO=#{ordNo,jdbcType=NUMERIC}
+	</delete>
+	
+<!-- 	발주서별 원자재 삭제 -->
+	<delete id="deleteAllOrdRaws" parameterType="String">
+		DELETE FROM ORDER_RAWS
+		 WHERE ORD_NUM=#{ordNum,jdbcType=VARCHAR}
+	</delete>
+</mapper>

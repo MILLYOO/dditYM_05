@@ -1,0 +1,68 @@
+@charset "UTF-8";
+
+#orderbookApplyForPI-modal
+, #piApplyForMR-modal
+, #piApplyForPW-modal
+, #stockForPI-modal {
+	width: 100%;
+	height: 100%;
+	position: absolute;	
+	left: 0;
+	top: 0;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.25);
+	backdrop-filter: blur(1.5px);
+	-webkit-backdrop-filter: blur(1.5px);
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+}
+#obApplySearchForm, #obApplyForPIForm,
+#piApplySearchForm, #piApplyForMRForm,
+#piApplyForPW{
+	display: inline-block;
+}
+#realgrid_obApplyForPIMaster, #realgrid_obookApplyForPIDetail,
+#realgrid_piApplyForMrMaster, #realgrid_piApplyForMrDetail{
+	height: 300px;
+}
+
+
+
+.rightAlign{
+	float: right;
+}
+.searchTag{
+	width: 180px;
+}
+#searchForm{
+	vertical-align: top;
+}
+.searchDate {
+	display: flex;
+}
+.searchDate > input {
+	margin-right: 6px;
+}
+.mydiv-wrap {
+	position: relative;
+	top: 40px;
+	left: 0px;
+	margin: 0 !important;
+}
+.div-wrap {
+	position: absolute;
+	left: 10px;
+	top: 15px;
+}
+#select3{
+	margin-left: 15px;
+}
+label {
+	margin : 0px 10px;
+}
+#rawsNameByStock{
+	width: 420px;
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.dao.SalesEmpDAO">
+	<select id="selectSalesEmpMonth" resultType="SalesRankVO">
+		SELECT ROWNUM AS ROW_NUM, D.*
+		FROM (
+		SELECT A.EMP_NAME, SUM(B.SCP_SUMCOST) AS SUM_COST
+		FROM SALESCLOSE A , SAL_PROD B, (SELECT SUBSTR(TO_CHAR(SALC_DATE,'YYYYMMDD'),5,2) AS SALC_DATE
+		                                    FROM SALESCLOSE) C
+		WHERE A.SALC_NUM = B.SALC_NUM
+		GROUP BY A.EMP_NAME, C.SALC_DATE
+		ORDER BY 2 DESC
+		) D
+		<![CDATA[
+		WHERE ROWNUM <= 5
+		]]>
+	</select>
+
+</mapper>

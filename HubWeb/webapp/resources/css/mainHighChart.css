@@ -1,0 +1,132 @@
+@charset "UTF-8";
+
+.highcharts-credits{
+	display : none;
+}
+
+.highcharts-figure1, .highcharts-figure2, .highcharts-figure3,
+.highcharts-data-table table {
+/*   min-width: 400px; */
+/*   max-width: 400px; 1209*/
+  margin: 1em auto;
+  margin-top:10px;
+}
+
+.highcharts-data-table table {
+  font-family: Verdana, sans-serif;
+  border-collapse: collapse;
+  border: 1px solid #ebebeb;
+  margin: 10px auto;
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+.highcharts-data-table caption {
+  padding: 1em 0;
+  font-size: 1.2em;
+  color: #555;
+}
+
+.highcharts-data-table th {
+  font-weight: 600;
+  padding: 0.5em;
+}
+
+.highcharts-data-table td,
+.highcharts-data-table th,
+.highcharts-data-table caption {
+  padding: 0.5em;
+}
+
+.highcharts-data-table thead tr,
+.highcharts-data-table tr:nth-child(even) {
+  background: #f8f8f8;
+}
+.highcharts-data-table tr:hover {
+  background: #f1f7ff;
+}
+
+
+/* 매입CSS */
+#container1 {
+  border: 1px solid rgba(220,220,220);
+  padding : 20px;
+  height: 240px;
+  float: left;
+  border-radius: 10px;	
+  background-color: white;
+}
+
+/* 매출CSS */
+#container2 {
+  border: 1px solid rgba(220,220,220);
+  padding : 20px;
+  height: 240px;
+  float: left;
+  border-radius: 10px;	
+  background-color: white;
+}
+
+/* 사원별매출CSS */
+#container3 {
+  border: 1px solid rgba(220,220,220);
+  padding : 20px;
+  height: 240px;
+  float: left;
+  border-radius: 10px;	
+  background-color: white;
+}
+/* #highChartDiv{ */
+/* 	width : 30%; */
+/* 	height : 1200px; */
+.container-fluid{
+	margin : 0px 0px;
+	padding : 0px 0px;
+}
+
+.highcharts-figure1,.highcharts-figure2, .highcharts-figure3 {
+	float: left;
+}
+
+
+
+/*---------------------------------------- 메인CSS----------------------------------- */
+
+#main-right{
+	float: right;
+	width: 41%;
+/* 	margin-bottom: 2%; */
+	padding-left: 50px;
+	padding-top: 27px;
+	margin-top: 38px;
+}
+
+#main-left{
+	width: 59%;
+	float: left;
+}
+
+#main-notice{
+    width: 800px;
+	height: 180px;
+	margin: 8% 6% 5% 6%;
+	border: 1px solid rgba(220,220,220);
+	padding : 20px;
+    border-radius: 10px;	
+    background-color: white;
+}
+
+#del{
+	 width: 20px;
+	 height: 17px;
+}
+
+/* .mainContainer { */
+/* /*     height: 100vh; */ */
+/*     background-image: url('/resources/images/mainBackImg.png'); */
+/*     background-repeat : no-repeat; */
+/*     background-size : cover; */
+/*     background-position: top; */
+/*     opacity: 0.5; */
+/* } */

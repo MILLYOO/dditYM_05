@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.info1.departmentmanage.dao.DepartmentManageDAO">
+
+	<sql id="searchFrag">
+			<if test="hubSearchVO neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+					AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+				</if>
+			</if>
+	</sql>
+
+	<select id="selectDeptList" parameterType="HubSearchVO"
+		resultType="DepartmentVO">
+		select a.dept_code, a.dept_name, nvl(c.dept_count,0) dept_count
+		from department a, (select b.dept_code, count(b.dept_code) dept_count from
+		employee b group by dept_code) c
+		where a.dept_code = c.dept_code(+)
+		<include refid="searchFrag" />
+		order by a.dept_code
+
+	</select>
+
+	<insert id="insertDepartment" parameterType="DepartmentVO">
+		<selectKey resultType="int" keyProperty="deptCode"
+			order="BEFORE">
+			SELECT NVL(MAX(DEPT_CODE),0)+1 FROM DEPARTMENT
+		</selectKey>
+		INSERT INTO
+		DEPARTMENT(DEPT_CODE, DEPT_NAME)
+		VALUES (
+		#{deptCode,jdbcType=NUMERIC},
+		#{deptName,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<update id="updateDepartment" parameterType="DepartmentVO">
+		UPDATE DEPARTMENT
+		SET
+		DEPT_NAME = #{deptName,jdbcType=VARCHAR}
+		WHERE
+		DEPT_CODE = #{deptCode,jdbcType=NUMERIC}
+	</update>
+
+	<delete id="deleteDepartment" parameterType="DepartmentVO">
+		DELETE FROM
+		DEPARTMENT
+		WHERE DEPT_CODE = #{deptCode,jdbcType=NUMERIC}
+	</delete>
+</mapper>

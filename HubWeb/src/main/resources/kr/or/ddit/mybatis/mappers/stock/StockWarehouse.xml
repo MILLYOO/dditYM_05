@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.stock.stockstatusbywarehouse.dao.StockStatusByWarehouseDAO">
+	<select id="selectWarList" resultType="kr.or.ddit.stock.vo.WarItemVO">
+		SELECT A.WAR_CODE, B.WAR_NAME, SUM(A.WR_QTY) AS WAR_SUM
+		FROM WAR_ITEM A, WAREHOUSE B
+		WHERE A.WAR_CODE = B.WAR_CODE
+		GROUP BY A.WAR_CODE, B.WAR_NAME
+		ORDER BY A.WAR_CODE
+	</select>
+	
+	<select id="selectWarItemList" parameterType="HubSearchVO" resultType="kr.or.ddit.stock.vo.WarItemVO">
+		SELECT A1.ICODE_NAME, A1.RAWS_CODE, A1.RAWS_NAME, A1.GCOMM_NAME, A1.기초재고 AS BASE_QTY, A1.입고수량 AS ENTER_QTY
+	        , A1.UCOMM_INNAME, A1.출고수량 AS OUT_QTY, A1.UCOMM_OUTNAME, A1.재고수량 AS STO_QTY, A1.UCOMM_STNAME
+	        , A1.RAWS_ADQINV, A1.재고수량-A1.RAWS_ADQINV AS RETRO_EXCESS
+		FROM(
+		    SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME, 기초재고
+		            ,입고수량, UCOMM_INNAME, 출고수량, UCOMM_OUTNAME
+		            , 기초재고+입고수량-출고수량 AS 재고수량, UCOMM_STNAME, RAWS_ADQINV
+		    FROM(
+		        SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME
+		                ,기초재고, 입고수량, UCOMM_INNAME, 출고수량, UCOMM_OUTNAME
+		                ,UCOMM_STNAME, RAWS_ADQINV
+		        FROM(        
+		            SELECT B.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME
+		                    , NVL(B.RAWS_QTY,0) AS 기초재고, A.입고수량, B.UCOMM_INNAME, A.출고수량
+		                    , B.UCOMM_OUTNAME, B.UCOMM_STNAME, NVL(B.RAWS_ADQINV,0) AS RAWS_ADQINV
+		            FROM(
+		                SELECT d.PROD_CODE, NVL(SUM(c.PP_QTY),0) AS "입고수량", NVL(NULL,0) AS "출고수량"
+		                FROM PRWA_PROD c, PRODUCT d, PRODWARE c1 
+		                WHERE c.PROD_CODE(+) = d.PROD_CODE
+	                    AND c.ARR_NUM = c1.ARR_NUM
+	                    <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+		                    <![CDATA[
+			                    AND c1.ARR_DATE >= TO_DATE(#{dateStart})
+			                    AND c1.ARR_DATE <= TO_DATE(#{dateEnd})
+			                ]]>   
+		                </if> 
+		                GROUP BY d.PROD_CODE
+		                UNION
+		                SELECT f.PROD_CODE, NVL(NULL,0) AS "입고수량", NVL(SUM(e.RP_QTY),0) AS "출고수량"
+		                FROM REL_PROD e, PRODUCT f, RELEASE e1
+		                WHERE e.PROD_CODE(+) = f.PROD_CODE
+	                    AND e.REL_NUM = e1.REL_NUM
+			            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+			                <![CDATA[
+			                 AND e1.REL_DATE >= TO_DATE(#{dateStart})
+			                 AND e1.REL_DATE <= TO_DATE(#{dateEnd})
+			                ]]>
+            			</if>
+		                GROUP BY f.PROD_CODE
+		                ) A, ITEM B
+		                 WHERE A.PROD_CODE = B.RAWS_CODE
+		        )
+		    )
+		) A1, WAR_ITEM B1
+		WHERE A1.RAWS_CODE = B1.RAW_CODE
+		AND B1.WAR_CODE = (SELECT WAR_CODE
+		                     FROM WAREHOUSE
+		                     WHERE WAR_NAME = #{warName})
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(rawsCode)">                     
+	    	AND A1.RAWS_CODE = #{rawsCode}
+	    </if>	  
+	    <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(icodeName)">    
+	    	AND ICODE_NAME = #{icodeName}  
+	    </if>
+    
+		UNION
+		
+		SELECT A1.ICODE_NAME, A1.RAWS_CODE, A1.RAWS_NAME, A1.GCOMM_NAME, A1.기초재고 AS BASE_QTY, A1.입고수량 AS ENTER_QTY
+		        , A1.UCOMM_INNAME, A1.출고수량 AS OUT_QTY, A1.UCOMM_OUTNAME, A1.재고수량 AS STO_QTY, A1.UCOMM_STNAME
+		        , A1.RAWS_ADQINV, A1.재고수량-A1.RAWS_ADQINV AS RETRO_EXCESS
+			FROM(
+			    SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME, 기초재고
+			            ,입고수량, UCOMM_INNAME, 출고수량, UCOMM_OUTNAME
+			            , 기초재고+입고수량-출고수량 AS 재고수량, UCOMM_STNAME, RAWS_ADQINV
+			    FROM(
+			        SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME
+			                ,기초재고, 입고수량, UCOMM_INNAME, 출고수량, UCOMM_OUTNAME
+			                ,UCOMM_STNAME, RAWS_ADQINV
+			        FROM(        
+			            SELECT B.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME
+			                    , NVL(B.RAWS_QTY,0) AS 기초재고, A.입고수량, B.UCOMM_INNAME, A.출고수량
+			                    , B.UCOMM_OUTNAME, B.UCOMM_STNAME, NVL(B.RAWS_ADQINV,0) AS RAWS_ADQINV
+			            FROM(
+			                SELECT d.RAWS_CODE, NVL(SUM(c.IR_QTY),0) AS "입고수량", NVL(NULL,0) AS "출고수량"
+			                FROM INCOMING_RAWS c, RAWS d, INCOMING c1
+			                WHERE c.RAWS_CODE(+) = d.RAWS_CODE
+		                    AND c1.INC_NUM = c.INC_NUM
+		                    <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+			                    <![CDATA[
+				                    AND c1.INC_DATE >= TO_DATE(#{dateStart})
+				                    AND c1.INC_DATE <= TO_DATE(#{dateEnd})
+				                ]]>  
+				            </if>      
+			                GROUP BY d.RAWS_CODE
+			                UNION
+			                SELECT f.RAWS_CODE, NVL(NULL,0) AS "입고수량", NVL(SUM(e.MR_QTY),0) AS "출고수량"
+			                FROM MRELEASE_RAWS e, RAWS f, MRELEASE e1
+			                WHERE e.RAWS_CODE(+) = f.RAWS_CODE
+		                    AND e1.MRE_NUM = e1.MRE_NUM
+		                    <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+			                    <![CDATA[
+				                    AND e1.MRE_DATE >= TO_DATE(#{dateStart})
+				                    AND e1.MRE_DATE <= TO_DATE(#{dateEnd})
+				                ]]> 
+			                </if>     
+			                GROUP BY f.RAWS_CODE
+			                ) A, ITEM B
+			                 WHERE A.RAWS_CODE = B.RAWS_CODE
+			        )
+			    )
+			) A1, WAR_ITEM B1
+			WHERE A1.RAWS_CODE = B1.RAW_CODE
+			AND B1.WAR_CODE = (SELECT WAR_CODE
+			                     FROM WAREHOUSE
+			                     WHERE WAR_NAME = #{warName})
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(rawsCode)">                            
+		    	AND A1.RAWS_CODE = #{rawsCode}
+		    </if>   
+		    <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(icodeName)">    
+		    	AND ICODE_NAME = #{icodeName}  
+		    </if>                      
+	</select>
+	
+	<select id="selectStockTakingWarItem" parameterType="HubSearchVO" resultType="WarItemVO">
+		SELECT A.WAR_CODE, A.WR_QTY, B.RAWS_CODE
+		, B.ICODE_NAME, B.RAWS_NAME, B.GCOMM_NAME, B.LDIV_NAME
+		, B.MDIV_NAME, B.SDIV_NAME, B.UCOMM_STNAME, B.RAWS_ADQINV
+		, C.WAR_NAME, C.WAR_ADD1, C.DEPT_NAME, C.EMP_NAME, C.WAR_ADD2
+		FROM WAR_ITEM A, ITEM B, WAREHOUSE C
+		WHERE A.RAW_CODE = B.RAWS_CODE
+		AND A.WAR_CODE = C.WAR_CODE
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(prodCode)">                            
+	    	AND B.RAWS_CODE = #{prodCode}
+	    </if>   
+	    <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(warName)">    
+	    	AND C.WAR_NAME = #{warName}  
+	    </if>
+	</select>
+</mapper>

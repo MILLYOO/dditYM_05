@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.sales.salesleaderboard.dao.SalesLeaderboardDAO">
+
+	<sql id="SalesRankFrag">
+		<trim prefix="WHERE" prefixOverrides="AND">
+			<if test="hubSearchVO neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND salc_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND salc_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.orbFinish)">
+             	<![CDATA[
+                 AND INSTR(ORB_FINISH, #{hubSearchVO.orbFinish}) > 0
+                ]]>
+				</if>
+			</if>
+		</trim>
+	</sql>
+	<sql id="SalesRankFragdetail">
+		<trim prefix="WHERE" prefixOverrides="AND">
+			<if test="SalesRankVO neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(SalesRankVO.startDate)">
+                <![CDATA[
+                   AND salc_DATE >= #{SalesRankVO.startDate}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(SalesRankVO.endDate)">
+                <![CDATA[
+                   AND salc_DATE <= #{SalesRankVO.endDate}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(SalesRankVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{SalesRankVO.buyerName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(SalesRankVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{SalesRankVO.empName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(SalesRankVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{SalesRankVO.deptName}) > 0
+                ]]>
+				</if>
+			</if>
+		</trim>
+	</sql>
+
+	<!--매출마감 거래처별 순위조회 -->
+	<select id="selectSalesLeaderBoardListPC"
+		parameterType="HubSearchVO" resultType="SalesRankVO">
+		SELECT ROWNUM, D.*, round(RATIO_TO_REPORT(d.SALC_SUMCOST) over(), 2)*100 || '%' as salc_ratio
+		  FROM
+				(SELECT BUYER_NAME  , SUM(SCP_QTY) AS SALC_QTY
+									, SUM(SCP_SP) AS SALC_SP
+									, SUM(SCP_VAT) AS SALC_VAT 
+									, SUM(SCP_SUMCOST) AS SALC_SUMCOST
+				  FROM(
+					     SELECT * FROM (SELECT    B.BUYER_NAME
+												, A.SALC_NUM, A.SCP_QTY
+												, A.SCP_SP, A.SCP_VAT
+												, A.SCP_SUMCOST
+												, B.SALC_DATE
+						  FROM SAL_PROD A, SALESCLOSE B
+						 WHERE A.SALC_NUM = B.SALC_NUM ))
+				<include refid="SalesRankFrag"/>
+		         GROUP BY BUYER_NAME
+		         ORDER BY SALC_SUMCOST DESC) D
+	</select>
+	
+	
+	
+<!-- 	매출마감 부서별 순위 조회 -->
+	<select id="selectSalesLeaderBoardListDP"
+		parameterType="HubSearchVO" resultType="SalesRankVO">
+		
+		
+		SELECT ROWNUM, D.*, round(RATIO_TO_REPORT(d.SALC_SUMCOST) over(), 2)*100 || '%' as salc_ratio
+		  FROM
+				(SELECT DEPT_NAME  , SUM(SCP_QTY) AS SALC_QTY
+									, SUM(SCP_SP) AS SALC_SP
+									, SUM(SCP_VAT) AS SALC_VAT 
+									, SUM(SCP_SUMCOST) AS SALC_SUMCOST
+				  FROM(
+					     SELECT * FROM (SELECT    B.DEPT_NAME
+												, A.SALC_NUM, A.SCP_QTY
+												, A.SCP_SP, A.SCP_VAT
+												, A.SCP_SUMCOST
+												, B.SALC_DATE
+											
+						  FROM SAL_PROD A, SALESCLOSE B
+						 WHERE A.SALC_NUM = B.SALC_NUM ))
+ 
+				<include refid="SalesRankFrag"/>
+		         GROUP BY DEPT_NAME
+		         ORDER BY SALC_SUMCOST DESC) D
+		
+
+	</select>
+<!-- 	매출마감 사원별 순위 조회 -->
+	<select id="selectSalesLeaderBoardListEMP"
+		parameterType="HubSearchVO" resultType="SalesRankVO">
+		
+		
+		SELECT ROWNUM, D.*, round(RATIO_TO_REPORT(d.SALC_SUMCOST) over(), 2)*100 || '%' as salc_ratio
+		  FROM
+				(SELECT EMP_NAME  , SUM(SCP_QTY) AS SALC_QTY
+									, SUM(SCP_SP) AS SALC_SP
+									, SUM(SCP_VAT) AS SALC_VAT 
+									, SUM(SCP_SUMCOST) AS SALC_SUMCOST
+				  FROM(
+					     SELECT * FROM (SELECT    B.EMP_NAME
+												, A.SALC_NUM, A.SCP_QTY
+												, A.SCP_SP, A.SCP_VAT
+												, A.SCP_SUMCOST
+												, B.SALC_DATE
+											
+						  FROM SAL_PROD A, SALESCLOSE B
+						 WHERE A.SALC_NUM = B.SALC_NUM ))
+ 
+				<include refid="SalesRankFrag"/>
+		         GROUP BY EMP_NAME
+		         ORDER BY SALC_SUMCOST DESC) D
+
+	</select>
+	
+<!-- 	매출마감 순위표 거래처별 하위 조회 -->
+	<select id="selectSalesLeaderBoardProdList" parameterType="SalesRankVO" resultType="SalesRankVO">
+
+	SELECT ROWNUM, D.*, round(RATIO_TO_REPORT(d.SCP_SUMCOST) over(), 2)*100 || '%' as scp_ratio
+	  FROM
+			(SELECT ICODE_NAME
+				  , PROD_CODE
+				  , PROD_NAME
+				  , GCOMM_NAME
+				  , SUM(SCP_QTY) AS SCP_QTY
+				  , SUM(SCP_UPRICE) AS SCP_UPRICE
+				  , SUM(SCP_SP) AS SCP_SP
+				  , SUM(SCP_VAT) AS SCP_VAT
+				  , SUM(SCP_SUMCOST) AS SCP_SUMCOST
+	           FROM
+					(SELECT *
+					   FROM SAL_PROD
+					  WHERE SALC_NUM IN (SELECT SALC_NUM
+					FROM SALESCLOSE
+					<include refid="SalesRankFragdetail"/>
+					))
+<!-- 					WHERE BUYER_NAME = #{buyerName,jdbcType=VARCHAR} -->
+	  GROUP BY PROD_CODE, PROD_NAME, ICODE_NAME, GCOMM_NAME
+	  ORDER BY SCP_SUMCOST DESC) D
+	
+	</select>
+	
+
+
+
+
+</mapper>

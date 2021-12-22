@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.stock.stocktaking.dao.StockTakingDAO">
+
+
+	<insert id="insertStockTaking" parameterType="StockTakingVO">
+		<selectKey resultType="int" keyProperty="stotaNo" order="BEFORE">
+			SELECT NVL(MAX(STOTA_NO),0) + 1
+			  FROM STOCK_TAKING
+		</selectKey>
+		INSERT INTO STOCK_TAKING(
+		      STOTA_NO
+		    , STOTA_DATE
+		    , PROD_CODE
+		    , PROD_NAME
+		    , STOTA_QTY
+		    , WAR_NAME
+		    , STOTA_MEMO
+		    , STOTA_YN
+		    , STOTA_SEND
+		    , STOTA_RECV
+		)VALUES(
+			  #{stotaNo,jdbcType=NUMERIC}
+			, SYSDATE
+			, #{prodCode,jdbcType=VARCHAR}
+			, #{prodName,jdbcType=VARCHAR}
+			, #{stotaQty,jdbcType=NUMERIC}
+			, #{warName,jdbcType=VARCHAR}
+			, #{stotaMemo,jdbcType=VARCHAR}
+			, 'N'
+			, #{stotaSend,jdbcType=VARCHAR}
+			, #{stotaRecv,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+<!-- 입출고조정에서 재고실사 확인하지 않은 재고실사 내역 확인 -->
+	<select id="selectStockTakingYN" resultType="StockTakingVO">
+		 SELECT STOTA_NO
+			    , STOTA_DATE
+			    , PROD_CODE
+			    , PROD_NAME
+			    , STOTA_QTY
+			    , WAR_NAME
+			    , STOTA_MEMO
+			    , STOTA_YN
+			    , STOTA_SEND
+			    , STOTA_RECV
+		FROM STOCK_TAKING
+		WHERE STOTA_YN = 'N'    
+	</select>
+	
+<!-- 재고실사 확인여부 Y로 업데이트 -->
+	<update id="updateStockTaking">
+		UPDATE STOCK_TAKING
+		SET STOTA_YN = 'Y'
+		WHERE STOTA_NO = #{stotaNo}
+	</update>
+</mapper>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.stock.defectiveitemstockstatus.dao.DefectiveItemStockStatusDAO">
+
+	<select id="selectDefectiveStock" parameterType="HubSearchVO" resultType="kr.or.ddit.stock.vo.DefectiveStockVO">
+		SELECT ICODE_NAME, PROD_CODE, PROD_NAME, GCOMM_NAME, KCOMM_NAME, SUM(PP_BADNUM) AS PP_BADSUM
+		FROM PRWA_PROD
+		GROUP BY ICODE_NAME,PROD_CODE,PROD_NAME,GCOMM_NAME,KCOMM_NAME
+	</select>
+</mapper>

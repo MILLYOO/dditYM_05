@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.info1.projectmanage.dao.ProjectManageDAO">
+
+	<sql id="searchFrag">
+		 <trim prefix="WHERE" prefixOverrides="AND">
+		 	<if test="hubSearchVO neq null">
+		 		<if test="hubSearchVO.projCode neq null and hubSearchVO.projCode gt 0">
+		 			AND PROJ_CODE = #{hubSearchVO.projCode}
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.projSort)">
+		 			AND INSTR(PROJ_SORT, #{hubSearchVO.projSort}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.projName)">
+		 			AND INSTR(PROJ_NAME, #{hubSearchVO.projName}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.projUse)">
+		 			AND INSTR(PROJ_USE, #{hubSearchVO.projUse}) > 0
+		 		</if>
+		 	</if>   	
+		 </trim>
+	</sql>
+
+	<select id="selectProjectList" parameterType="HubSearchVO" resultType="ProjectVO">
+		SELECT 
+		    PROJ_CODE,
+		    PROJ_NAME,
+		    TO_CHAR(PROJ_START, 'YYYY/MM/DD') PROJ_START,
+		    TO_CHAR(PROJ_END, 'YYYY/MM/DD') PROJ_END,
+		    PROJ_SORT,
+		    PROJ_PURPOSE,
+		    PROJ_CONTENT,
+		    PROJ_BUDGET,
+		    EMP_NAME,
+		    DEPT_NAME,
+		    PROJ_USE
+		FROM PROJECT
+		<include refid="searchFrag" />
+		order by PROJ_CODE
+	</select>
+
+	<insert id="insertPorject" parameterType="ProjectVO">
+		<selectKey keyProperty="projCode" resultType="int"	order="BEFORE">
+			SELECT NVL(MAX(PROJ_CODE),0)+1 FROM PROJECT
+		</selectKey>
+		INSERT INTO PROJECT(PROJ_CODE, PROJ_NAME, PROJ_SORT, PROJ_USE)
+		VALUES(
+			#{projCode,jdbcType=NUMERIC},
+			#{projName,jdbcType=VARCHAR},
+			#{projSort,jdbcType=VARCHAR},
+			#{projUse,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<update id="updateProject" parameterType="ProjectVO">
+		UPDATE PROJECT
+		SET
+			PROJ_NAME = #{projName,jdbcType=VARCHAR},
+			PROJ_SORT = #{projSort,jdbcType=VARCHAR},
+			PROJ_USE  = #{projUse,jdbcType=VARCHAR}
+		WHERE
+			PROJ_CODE = #{projCode, jdbcType=NUMERIC}
+	</update>
+	<update id="updateDetailProject" parameterType="ProjectVO">
+		UPDATE PROJECT
+		SET
+			PROJ_START = TO_DATE(#{projStart,jdbcType=DATE}, 'YYYY/MM/DD'),
+			PROJ_END = TO_DATE(#{projEnd,jdbcType=DATE}, 'YYYY/MM/DD'),
+			PROJ_PURPOSE = #{projPurpose,jdbcType=VARCHAR},
+			PROJ_CONTENT = #{projContent,jdbcType=VARCHAR},
+			PROJ_BUDGET = #{projBudget,jdbcType=NUMERIC},
+			EMP_NAME = #{empName,jdbcType=VARCHAR},
+			DEPT_NAME = #{deptName,jdbcType=VARCHAR}
+		WHERE
+			PROJ_CODE = #{projCode, jdbcType=NUMERIC}
+	</update>
+			
+	<delete id="deleteProject" parameterType="ProjectVO">
+		DELETE FROM PROJECT
+		WHERE
+		PROJ_CODE = #{projCode, jdbcType=NUMERIC}
+	</delete>
+</mapper>

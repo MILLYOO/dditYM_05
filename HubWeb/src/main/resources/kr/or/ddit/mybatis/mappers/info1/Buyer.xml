@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.info1.buyermanage.dao.BuyerManageDAO">
+	 
+	 <sql id="searchFrag">
+		 <trim prefix="WHERE" prefixOverrides="AND">
+		 	<if test="hubSearchVO neq null">
+		 		<if test="hubSearchVO.buyerCode neq null and hubSearchVO.buyerCode gt 0">
+		 			AND buyer_CODE = #{hubSearchVO.buyerCode}
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+		 			AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerCeo)">
+		 			AND INSTR(BUYER_CEO, #{hubSearchVO.buyerCeo}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerRegnumber)">
+		 			AND INSTR(BUYER_REGNUMBER, #{hubSearchVO.buyerRegnumber}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerUse)">
+		 			AND INSTR(BUYER_USE, #{hubSearchVO.buyerUse}) > 0
+		 		</if>
+		 	</if>   	
+		 </trim>
+	</sql>
+
+	<select id="selectBuyerList" parameterType="HubSearchVO" resultType="BuyerVO">
+		SELECT 
+			BUYER_CODE,
+		    BUYER_NAME,
+		    BUYER_REGNUMBER,
+		    BUYER_CEO,
+		    BUYER_SORT,
+		    BUYER_WORKTYPE,
+		    BUYER_EVENT,
+		    BUYER_ADD1,
+		    BUYER_ADD2,
+		    BUYER_TEL,
+		    BUYER_FAX,
+		    BUYER_PARTNER,
+		    BUYER_DESK,
+		    TO_CHAR(BUYER_START, 'YYYY/MM/DD') BUYER_START,
+		    TO_CHAR(BUYER_END, 'YYYY/MM/DD') BUYER_END,
+		    SHIP_CODE,
+		    SHIP_NAME,
+		    SHIP_ADD,
+		    BUYER_RECEIVER,
+		    EMP_LINE,
+		    EMP_MAIL,
+		    BUYER_USE
+		FROM BUYER
+		<include refid="searchFrag" />
+		ORDER BY BUYER_CODE
+	</select>
+
+
+	<insert id="insertBuyer" parameterType="BuyerVO">
+		<selectKey	keyProperty="buyerCode" resultType="int" order="BEFORE">
+			SELECT NVL(MAX(BUYER_CODE),0)+1 FROM BUYER
+		</selectKey>
+		INSERT INTO BUYER(BUYER_CODE, BUYER_NAME, BUYER_CEO, BUYER_SORT, BUYER_USE)
+		VALUES(
+			#{buyerCode,jdbcType=NUMERIC},
+			#{buyerName,jdbcType=VARCHAR},
+			#{buyerCeo,jdbcType=VARCHAR},
+			#{buyerSort,jdbcType=VARCHAR},
+			#{buyerUse,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	
+	<update id="updateBuyer" parameterType="BuyerVO">
+		UPDATE BUYER 
+		SET 
+			BUYER_NAME = #{buyerName,jdbcType=VARCHAR},
+			BUYER_CEO =	#{buyerCeo,jdbcType=VARCHAR},
+			BUYER_SORT = #{buyerSort,jdbcType=VARCHAR},
+			BUYER_USE =#{buyerUse,jdbcType=VARCHAR}
+		WHERE 
+			BUYER_CODE = #{buyerCode,jdbcType=NUMERIC}
+	</update>
+	
+	
+	<update id="updateBuyerDetail" parameterType="BuyerVO">
+		UPDATE BUYER 
+		SET 
+			BUYER_REGNUMBER = #{buyerRegnumber,jdbcType=VARCHAR},
+			BUYER_WORKTYPE = #{buyerWorktype,jdbcType=VARCHAR},
+			BUYER_EVENT = #{buyerEvent,jdbcType=VARCHAR},
+			BUYER_ADD1 = #{buyerAdd1,jdbcType=VARCHAR},
+			BUYER_ADD2 = #{buyerAdd2,jdbcType=VARCHAR},
+			BUYER_TEL = #{buyerTel,jdbcType=VARCHAR},
+			BUYER_FAX = #{buyerFax,jdbcType=VARCHAR},
+			BUYER_PARTNER = #{buyerPartner,jdbcType=VARCHAR}, 
+			BUYER_DESK = #{buyerDesk,jdbcType=VARCHAR},
+			BUYER_START = TO_DATE(#{buyerStart,jdbcType=VARCHAR},'YYYY-MM-DD'),
+			BUYER_END = TO_DATE(#{buyerEnd,jdbcType=VARCHAR},'YYYY-MM-DD')
+		WHERE
+		   BUYER_CODE = #{buyerCode,jdbcType=NUMERIC}
+	
+	</update>
+	
+	<delete id="deleteBuyer" parameterType="BuyerVO">
+	DELETE FROM BUYER
+	WHERE BUYER_CODE = #{buyerCode,jdbcType=NUMERIC}
+	
+	</delete>
+</mapper>

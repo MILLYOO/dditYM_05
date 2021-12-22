@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.buy.purchaseleaderboard.dao.PurchaseLeaderboardDAO">
+	<!-- 매입마감서 순서대로 -->
+	<sql id="orderByPur">
+		ORDER BY PUR_NUM
+	</sql>
+
+	<sql id="searchFrag">
+		<trim prefix="WHERE" prefixOverrides="AND">
+			<if test="dateStart neq null">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+                <![CDATA[
+                   DOC_DATE BETWEEN TO_DATE(#{dateStart}, 'YYYY-MM-DD') AND TO_DATE(#{dateEnd}, 'YYYY-MM-DD')+0.99999
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(empName)">
+					AND INSTR(EMP_NAME, #{empName}) > 0
+				</if>
+				<if
+					test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(deptName)">
+					AND INSTR(DEPT_NAME, #{deptName}) > 0
+				</if>
+				<if
+					test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(buyerName)">
+					AND INSTR(BUYER_NAME, #{buyerName}) > 0
+				</if>
+			</if>
+		</trim>
+	</sql>
+	
+
+	<!-- 거래처별 매입순위표 masterGrid -->
+	<select id="selectPurchLeaderBoardListPC" parameterType="HubSearchVO" resultType="PurchCloseVO">
+	SELECT ROWNUM AS ROW_NUM, D.*
+    FROM (
+	    SELECT C.BUYER_NAME, C.PCR_QTY, C.PRC_UPRICE
+	        , C.PRC_SP, C.PRC_VAT, C.PRC_SUMCOST
+	        , ROUND(RATIO_TO_REPORT(C.PRC_SUMCOST) OVER(), 2) * 100 || '%'  AS PRC_RATIO
+	    FROM (
+	        SELECT A.BUYER_NAME
+	            , NVL(SUM(B.PCR_QTY),0) AS PCR_QTY
+	            , NVL(SUM(B.PRC_UPRICE),0) AS PRC_UPRICE
+	            , NVL(SUM(B.PRC_SP),0) AS PRC_SP
+	            , NVL(SUM(B.PRC_VAT),0) AS PRC_VAT 
+	            , NVL(SUM(B.PRC_SUMCOST),0) AS PRC_SUMCOST   
+	        FROM PURCHCLOSE A, (SELECT PUR_NUM
+	                                , NVL(SUM(PCR_QTY),0) AS PCR_QTY
+	                                , NVL(SUM(PRC_UPRICE),0) AS PRC_UPRICE
+	                                , NVL(SUM(PRC_SP),0) AS PRC_SP
+	                                , NVL(SUM(PRC_VAT),0) AS PRC_VAT
+	                                , NVL(SUM(PRC_SUMCOST),0) AS PRC_SUMCOST
+	                            FROM CLOSE_RAWS
+	                            <if test="rawsCode neq null">
+	                            	WHERE RAWS_CODE=#{rawsCode}
+	                            </if>
+	                            GROUP BY PUR_NUM) B
+	        WHERE A.PUR_NUM = B.PUR_NUM
+	        <if test="buyerName neq null">
+	        AND A.BUYER_NAME =#{buyerName}
+	        </if>
+	        <![CDATA[
+	        AND A.DOC_DATE >= #{dateStart}
+	        AND A.DOC_DATE <= #{dateEnd}
+	        ]]>
+	        GROUP BY A.BUYER_NAME
+	    ) C
+	    ORDER BY PRC_RATIO DESC
+	) D
+
+	</select>
+	
+	<!--거래처별 매입순위표 detailGrid  -->
+	<select id="selectPurchLeaderBoardRawsListPC" parameterType="PurchCloseVO" resultType="CloseRawsVO">
+		SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME, UCOMM_NAME
+    		   , PCR_QTY, PRC_UPRICE, PRC_SP, PRC_VAT, PRC_SUMCOST
+    		   , ROUND(RATIO_TO_REPORT(PRC_SUMCOST) OVER(), 2) * 100 || '%'  AS PRC_RATIO
+		  FROM(
+        SELECT A.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME, B.UCOMM_NAME
+        	   , SUM(B.PCR_QTY) AS PCR_QTY , SUM(B.PRC_UPRICE) AS PRC_UPRICE 
+		       , SUM(B.PRC_SP) AS PRC_SP, SUM(B.PRC_VAT) AS PRC_VAT
+		       , SUM(B.PRC_SUMCOST) AS PRC_SUMCOST
+   		  FROM RAWS A, CLOSE_RAWS B
+    	 WHERE A.RAWS_CODE = B.RAWS_CODE
+    	   AND B.PUR_NUM IN (SELECT PUR_NUM
+                        	   FROM PURCHCLOSE
+                       		  WHERE BUYER_NAME =#{buyerName})
+  	  GROUP BY A.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME, B.UCOMM_NAME    
+		)       
+	</select>
+	
+	<!-- 부서 매입순위표 masterGrid -->
+	<select id="selectPurchLeaderBoardListDP" parameterType="HubSearchVO" resultType="PurchCloseVO">
+SELECT ROWNUM AS ROW_NUM, D.*
+    FROM (
+    SELECT C.DEPT_NAME, C.PCR_QTY, C.PRC_UPRICE
+        , C.PRC_SP, C.PRC_VAT, C.PRC_SUMCOST
+        , ROUND(RATIO_TO_REPORT(C.PRC_SUMCOST) OVER(), 2) * 100 || '%'  AS PRC_RATIO
+    FROM (
+        SELECT A.DEPT_NAME
+            , NVL(SUM(B.PCR_QTY),0) AS PCR_QTY
+            , NVL(SUM(B.PRC_UPRICE),0) AS PRC_UPRICE
+            , NVL(SUM(B.PRC_SP),0) AS PRC_SP
+            , NVL(SUM(B.PRC_VAT),0) AS PRC_VAT 
+            , NVL(SUM(B.PRC_SUMCOST),0) AS PRC_SUMCOST   
+        FROM PURCHCLOSE A, (SELECT PUR_NUM
+                                , NVL(SUM(PCR_QTY),0) AS PCR_QTY
+                                , NVL(SUM(PRC_UPRICE),0) AS PRC_UPRICE
+                                , NVL(SUM(PRC_SP),0) AS PRC_SP
+                                , NVL(SUM(PRC_VAT),0) AS PRC_VAT
+                                , NVL(SUM(PRC_SUMCOST),0) AS PRC_SUMCOST
+                            FROM CLOSE_RAWS
+                            <if test="rawsCode neq null">
+	                          	WHERE RAWS_CODE=#{rawsCode}
+	                        </if>
+                            GROUP BY PUR_NUM) B
+        WHERE A.PUR_NUM = B.PUR_NUM
+	    	<if test="deptName neq null">
+	        AND A.DEPT_NAME =#{deptName}
+	        </if>
+	        <![CDATA[
+	        AND A.DOC_DATE >= #{dateStart}
+	        AND A.DOC_DATE <= #{dateEnd}
+	        ]]>
+        GROUP BY A.DEPT_NAME
+    ) C
+    ORDER BY PRC_RATIO DESC
+) D
+	</select>
+	
+	<!--부서별 매입순위표 detailGrid  -->
+	<select id="selectPurchLeaderBoardRawsListDP" parameterType="PurchCloseVO" resultType="CloseRawsVO">
+SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME, UCOMM_NAME
+    , PCR_QTY, PRC_UPRICE, PRC_SP, PRC_VAT, PRC_SUMCOST
+    , ROUND(RATIO_TO_REPORT(PRC_SUMCOST) OVER(), 2) * 100 || '%'  AS PRC_RATIO
+FROM(
+    SELECT A.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME, B.UCOMM_NAME
+        , SUM(B.PCR_QTY) AS PCR_QTY , SUM(B.PRC_UPRICE) AS PRC_UPRICE 
+        , SUM(B.PRC_SP) AS PRC_SP, SUM(B.PRC_VAT) AS PRC_VAT
+        , SUM(B.PRC_SUMCOST) AS PRC_SUMCOST
+    FROM RAWS A, CLOSE_RAWS B
+    WHERE A.RAWS_CODE = B.RAWS_CODE
+    AND B.PUR_NUM IN (SELECT PUR_NUM
+                        FROM PURCHCLOSE
+                        WHERE DEPT_NAME = #{deptName})
+    GROUP BY A.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME, B.UCOMM_NAME    
+)      
+	</select>
+	
+	<!-- 사원 매입순위표 masterGrid -->
+	<select id="selectPurchLeaderBoardListEMP" parameterType="HubSearchVO" resultType="PurchCloseVO">
+SELECT ROWNUM, D.*
+    FROM (
+    SELECT C.EMP_NAME, C.PCR_QTY, C.PRC_UPRICE
+        , C.PRC_SP, C.PRC_VAT, C.PRC_SUMCOST
+        , ROUND(RATIO_TO_REPORT(C.PRC_SUMCOST) OVER(), 2) * 100 || '%'  AS PRC_RATIO
+    FROM (
+        SELECT A.EMP_NAME
+            , NVL(SUM(B.PCR_QTY),0) AS PCR_QTY
+            , NVL(SUM(B.PRC_UPRICE),0) AS PRC_UPRICE
+            , NVL(SUM(B.PRC_SP),0) AS PRC_SP
+            , NVL(SUM(B.PRC_VAT),0) AS PRC_VAT 
+            , NVL(SUM(B.PRC_SUMCOST),0) AS PRC_SUMCOST   
+        FROM PURCHCLOSE A, (SELECT PUR_NUM
+                                , NVL(SUM(PCR_QTY),0) AS PCR_QTY
+                                , NVL(SUM(PRC_UPRICE),0) AS PRC_UPRICE
+                                , NVL(SUM(PRC_SP),0) AS PRC_SP
+                                , NVL(SUM(PRC_VAT),0) AS PRC_VAT
+                                , NVL(SUM(PRC_SUMCOST),0) AS PRC_SUMCOST
+                            FROM CLOSE_RAWS
+                            <if test="rawsCode neq null">
+	                          	WHERE RAWS_CODE=#{rawsCode}
+	                        </if>
+                            GROUP BY PUR_NUM) B
+        WHERE A.PUR_NUM = B.PUR_NUM
+	    	<if test="empName neq null">
+	        AND A.EMP_NAME =#{empName}
+	        </if>
+	        <![CDATA[
+	        AND A.DOC_DATE >= #{dateStart}
+	        AND A.DOC_DATE <= #{dateEnd}
+	        ]]>
+        GROUP BY A.EMP_NAME
+    ) C
+    ORDER BY PRC_RATIO DESC
+) D
+	</select>
+	
+	<!-- 사원별 매입순위표 detailGrid -->
+	<select id="selectPurchLeaderBoardRawsListEMP" parameterType="PurchCloseVO" resultType="CloseRawsVO">
+SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME, UCOMM_NAME
+    , PCR_QTY, PRC_UPRICE, PRC_SP, PRC_VAT, PRC_SUMCOST
+    , ROUND(RATIO_TO_REPORT(PRC_SUMCOST) OVER(), 2) * 100 || '%'  AS PRC_RATIO
+FROM(
+    SELECT A.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME, B.UCOMM_NAME
+        , SUM(B.PCR_QTY) AS PCR_QTY , SUM(B.PRC_UPRICE) AS PRC_UPRICE 
+        , SUM(B.PRC_SP) AS PRC_SP, SUM(B.PRC_VAT) AS PRC_VAT
+        , SUM(B.PRC_SUMCOST) AS PRC_SUMCOST
+    FROM RAWS A, CLOSE_RAWS B
+    WHERE A.RAWS_CODE = B.RAWS_CODE
+    AND B.PUR_NUM IN (SELECT PUR_NUM
+                        FROM PURCHCLOSE
+                        WHERE EMP_NAME = #{empName})                    
+    GROUP BY A.ICODE_NAME, B.RAWS_CODE, B.RAWS_NAME, B.GCOMM_NAME, B.UCOMM_NAME    
+)
+	</select>
+
+
+</mapper>

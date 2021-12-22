@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.info2.itemmanage.dao.ItemManageDAO">
+	
+	<sql id="searchFrag">
+		 <trim prefix="WHERE" prefixOverrides="AND">
+		 	<if test="hubSearchVO neq null">
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.rawsCode)">
+		 			AND INSTR(RAWS_CODE, #{hubSearchVO.rawsCode}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.rawsName)">
+		 			AND INSTR(RAWS_NAME, #{hubSearchVO.rawsName}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.lagDiv)">
+		 			AND INSTR(DIV_NUM, #{hubSearchVO.lagDiv}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.midDiv)">
+		 			AND INSTR(DIV_NUM, #{hubSearchVO.midDiv}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.smlDiv)">
+		 			AND INSTR(DIV_NUM, #{hubSearchVO.smlDiv}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.icodeName)">
+		 			AND ICODE_NAME = #{hubSearchVO.icodeName}
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.gcommName)">
+		 			AND INSTR(GCOMM_NAME, #{hubSearchVO.gcommName}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.rawsUse)">
+		 			AND INSTR(RAWS_USE, #{hubSearchVO.rawsUse}) >0
+		 		</if>
+		 	</if>   	
+		 </trim>
+	</sql>
+	
+	<sql id="searchFragStockAll">
+	<trim prefix="AND">
+	 	<if test="hubSearchVO neq null">
+	 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.rawsCode)">
+	 			A.ICODE_NAME = #{hubSearchVO.rawsCode}
+	 		</if>
+	 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.rawsName)">
+	 			INSTR(A.RAWS_NAME, #{hubSearchVO.rawsName}) > 0
+	 		</if>
+	 	</if>   	
+	 	</trim>
+	</sql>
+	
+	
+<!-- 	품목 리스트 조회 -->
+	<select id="selectItemList" resultType="kr.or.ddit.info2.vo.ItemVO">
+		SELECT raws_code, icode_name, raws_name
+			, gcomm_name, raws_qty, ldiv_name
+			, mdiv_name, sdiv_name, ucomm_inname
+			, ucomm_outname, raws_adqinv, raws_stancost
+			, raws_actucost, raws_purchprice, raws_salprice
+			, raws_use, raws_baseqty, raws_baseucost
+			, raws_basecost, raws_invqty, raws_invucost
+			, raws_invcost, ucomm_stname
+		FROM item
+	    <include refid="searchFrag" />
+	</select>
+	
+<!-- 	현재고 총괄현황 -->
+	<select id="selectStockAllStatus" resultType="kr.or.ddit.info2.vo.ItemVO">
+		WITH A AS( 
+		SELECT ICODE_NAME, RAWS_CODE, RAWS_NAME
+		    ,GCOMM_NAME, UCOMM_STNAME, LDIV_NAME
+		    ,MDIV_NAME, SDIV_NAME, NVL(RAWS_BASEQTY,0) AS RAWS_BASEQTY
+		    ,NVL(RAWS_QTY,0) AS RAWS_QTY
+		FROM ITEM
+		), B AS(
+		SELECT b.RAWS_CODE, NVL(SUM(a.IR_QTY),0) AS "BUY_ENTER"
+		FROM INCOMING_RAWS a, ITEM b
+		WHERE a.RAWS_CODE(+) = b.RAWS_CODE
+		GROUP BY b.RAWS_CODE
+		), C AS(
+		SELECT d.RAWS_CODE, NVL(SUM(c.PP_QTY),0) AS "PROD_ENTER"
+		FROM PRWA_PROD c, ITEM d
+		WHERE c.PROD_CODE(+) = d.RAWS_CODE
+		GROUP BY d.RAWS_CODE
+		), D AS(
+		SELECT f.RAWS_CODE, NVL(SUM(e.RP_QTY),0) AS "SELL_OUT"
+		FROM REL_PROD e, ITEM f
+		WHERE e.PROD_CODE(+) = f.RAWS_CODE
+		GROUP BY f.RAWS_CODE
+		), E AS(
+		SELECT g.RAWS_CODE, NVL(SUM(h.MR_QTY),0) AS "PROD_OUT"
+		FROM MRELEASE_RAWS h, ITEM g
+		WHERE h.RAWS_CODE(+) = g.RAWS_CODE
+		GROUP BY g.RAWS_CODE
+		)
+		SELECT A.*, B.BUY_ENTER, C.PROD_ENTER, B.BUY_ENTER+C.PROD_ENTER AS "SUM_ENTER", D.SELL_OUT, E.PROD_OUT, D.SELL_OUT+E.PROD_OUT AS "SUM_OUT"
+		FROM A,B,C,D,E
+		WHERE A.RAWS_CODE = B.RAWS_CODE
+		AND A.RAWS_CODE = C.RAWS_CODE
+		AND A.RAWS_CODE = D.RAWS_CODE
+		AND A.RAWS_CODE = E.RAWS_CODE
+		<include refid="searchFragStockAll" />
+	</select>
+	
+	<insert id="insertItem"	parameterType="ItemVO">
+		<if	test="@org.apache.commons.lang3.StringUtils@isNotBlank(icodeName)">
+			<choose>
+				<when test="icodeName eq '제품'">
+					INSERT INTO PRODUCT(ICODE_NAME, PROD_CODE, PROD_NAME, GCOMM_NAME,
+					PROD_USE)
+					
+					VALUES (
+					#{icodeName,jdbcType=VARCHAR},
+					#{rawsCode,jdbcType=VARCHAR},
+					#{rawsName,jdbcType=VARCHAR},
+					#{gcommName,jdbcType=VARCHAR},
+					'Y'
+					)
+				
+				</when>
+				<otherwise>
+					INSERT INTO RAWS(ICODE_NAME, RAWS_CODE, RAWS_NAME, GCOMM_NAME, RAWS_USE)
+				
+					VALUES (
+					#{icodeName,jdbcType=VARCHAR},
+					#{rawsCode,jdbcType=VARCHAR},
+					#{rawsName,jdbcType=VARCHAR},
+					#{gcommName,jdbcType=VARCHAR},
+					'Y'
+					)
+		
+				</otherwise>
+			</choose>
+		</if>
+	</insert>
+	
+	<insert id="insertItemWarehouse" parameterType="ItemVO">
+			<if	test="@org.apache.commons.lang3.StringUtils@isNotBlank(icodeName)">
+			<choose>
+				<when test="icodeName eq '제품'">
+				<foreach collection="warList" item="war" index="idx" open="INSERT ALL" close="SELECT * FROM DUAL">
+						INTO WAR_PROD(PROD_CODE, WAR_CODE, WP_QTY)
+						VALUES (
+							#{rawsCode,jdbcType=VARCHAR},
+							#{war.warCode, jdbcType=NUMERIC},
+							0
+						)
+				</foreach>	
+				</when>
+				<otherwise>
+				<foreach collection="warList" item="war" index="idx" open="INSERT ALL" close="SELECT * FROM DUAL">
+						INTO WAR_RAW(RAW_CODE, WAR_CODE, WR_QTY)
+						VALUES (
+							#{rawsCode,jdbcType=VARCHAR},
+							#{war.warCode, jdbcType=NUMERIC},
+							0
+						)
+					</foreach>
+				</otherwise>
+			</choose>
+		</if>
+	</insert>
+	
+	
+	<update id="updateItem" parameterType="ItemVO">
+	UPDATE 
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(icodeName)">
+			<choose>
+				<when test="icodeName eq '제품'">
+				PRODUCT SET 
+					ICODE_NAME = #{icodeName,jdbcType=VARCHAR},
+					PROD_NAME = #{rawsName,jdbcType=VARCHAR}
+				where prod_code = #{rawsCode,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+				RAWS SET 
+					ICODE_NAME = #{icodeName,jdbcType=VARCHAR},
+					RAWS_NAME = #{rawsName,jdbcType=VARCHAR}
+				where raws_code = #{rawsCode,jdbcType=VARCHAR}
+				</otherwise>
+			</choose>
+		</if>
+	</update>
+	
+	
+	<update id="updateItemDetail">
+	UPDATE 
+	<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(icodeName)">
+				<choose>
+					<when test="icodeName eq '제품'">
+						PRODUCT SET
+								ldiv_name = #{ldivName,jdbcType=VARCHAR},
+								mdiv_name = #{mdivName,jdbcType=VARCHAR},
+								sdiv_name = #{sdivName,jdbcType=VARCHAR},
+								gcomm_name = #{gcommName,jdbcType=VARCHAR},
+								ucomm_inname = #{ucommInname,jdbcType=VARCHAR},
+								ucomm_outname = #{ucommOutname,jdbcType=VARCHAR},
+								ucomm_stname = #{ucommStname,jdbcType=VARCHAR},
+								prod_adqinv = #{rawsAdqinv,jdbcType=NUMERIC},
+								prod_stancost = #{rawsStancost,jdbcType=NUMERIC},
+								prod_actucost = #{rawsActucost,jdbcType=NUMERIC},
+								prod_purchprice = #{rawsPurchprice,jdbcType=NUMERIC},
+								prod_salprice = #{rawsSalprice,jdbcType=NUMERIC},
+								prod_use = #{rawsUse,jdbcType=VARCHAR}
+								where prod_code = #{rawsCode,jdbcType=VARCHAR}
+					</when>
+					<otherwise>
+						RAWS SET
+								ldiv_name = #{ldivName,jdbcType=VARCHAR},
+								mdiv_name = #{mdivName,jdbcType=VARCHAR},
+								sdiv_name = #{sdivName,jdbcType=VARCHAR},
+								gcomm_name = #{gcommName,jdbcType=VARCHAR},
+								ucomm_inname = #{ucommInname,jdbcType=VARCHAR},
+								ucomm_outname = #{ucommOutname,jdbcType=VARCHAR},
+								ucomm_stname = #{ucommStname,jdbcType=VARCHAR},
+								raws_adqinv = #{rawsAdqinv,jdbcType=NUMERIC},
+								raws_stancost = #{rawsStancost,jdbcType=NUMERIC},
+								raws_actucost = #{rawsActucost,jdbcType=NUMERIC},
+								raws_purchprice = #{rawsPurchprice,jdbcType=NUMERIC},
+								raws_salprice = #{rawsSalprice,jdbcType=NUMERIC},
+								raws_use = #{rawsUse,jdbcType=VARCHAR}
+								where raws_code = #{rawsCode,jdbcType=VARCHAR}
+					</otherwise>
+				</choose>
+			</if>
+	</update>
+	
+	<delete id="deleteItem" parameterType="ItemVO">
+	</delete>
+</mapper>

@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.stock.stockvaluation.dao.InventoryValuationDAO">
+	
+	<sql id="searchFrag">
+		<trim prefix="WHERE" prefixOverrides="AND">
+          <if test="dateStart neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+                <![CDATA[
+                   STV_START >= TO_DATE(#{dateStart}, 'YYYY-MM-DD')
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateEnd)">
+             	<![CDATA[
+                	AND STV_END <= TO_DATE(#{dateEnd}, 'YYYY-MM-DD')
+                ]]>
+             </if>
+           </if>
+         </trim>
+	</sql>
+
+<!-- 재고평가가 완료된 리스트를 조회한다 -->
+	<select id="selectValuationList" parameterType="HubSearchVO" resultType="StoValuVO">
+		SELECT
+		    STV_NUM,
+		    STV_START,
+		    STV_END,
+		    STV_DATE,
+		    DEPT_NAME,
+		    EMP_NAME,
+		    STV_CHECK
+		FROM
+		    STOVALU
+		<include refid="searchFrag"/>
+	</select>
+
+<!-- 	재고평가결과 조회 -> 재고평가번호를 파라미터로 받아서 List에 담는다 -->
+	<select id="selectValuationItemList" parameterType="StovalItemVO" resultType="StovalItemVO">
+		SELECT
+		    STV_NO,
+		    STV_NUM,
+		    CONCAT(RAWS_CODE,PROD_CODE) AS ITEM_CODE,
+		    ICODE_NAME,
+		    PROD_NAME,
+		    GCOMM_NAME,
+		    UCOMM_NAME,
+		    PROD_BASEQTY,
+		    PROD_BASEUCOST,
+		    PROD_BASECOST,
+		    SVI_INQTY,
+		    SVI_INCOST,
+		    SVI_OUTQTY,
+		    SVI_OUTCOST,
+		    PROD_INVQTY,
+		    PROD_INVUCOST,
+		    PROD_INVCOST
+		FROM
+		    STOVAL_ITEM
+		WHERE STV_NUM = #{stvNum}
+	</select>
+
+<!-- 재고평가하기(등록하기) -->
+	<insert id="insertValuation" parameterType="StoValuVO">
+		<selectKey resultType="String" keyProperty="stvNum" order="BEFORE">
+			 SELECT 'SU'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(MAX(TO_NUMBER(SUBSTR(STV_NUM,9,10))),0) + 1),2,0)
+			  FROM STOVALU
+			 WHERE SUBSTR(STV_NUM,1,8)='SU'||TO_CHAR(SYSDATE,'YYMMDD')
+		</selectKey>
+		INSERT INTO STOVALU (
+		    STV_NUM,
+		    STV_START,
+		    STV_END,
+		    STV_DATE,
+		    DEPT_NAME,
+		    EMP_NAME,
+		    STV_CHECK
+		) VALUES (
+		     #{stvNum,jdbcType=VARCHAR}
+			, TO_DATE(#{stvStart,jdbcType=DATE}, 'YYYY/MM/DD')
+			, TO_DATE(#{stvEnd,jdbcType=DATE}, 'YYYY/MM/DD')
+			, SYSDATE
+			, #{deptName,jdbcType=VARCHAR}
+			, #{empName,jdbcType=VARCHAR}
+			, #{stvCheck,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<select id="selectValuationResult" parameterType="StoValuVO" resultType="StovalItemVO">
+		SELECT A1.*, NVL(B1.입고수량,0) AS SVI_INQTY, NVL(B1.입고금액,0) AS SVI_INCOST
+		    , NVL(C1.출고수량,0) AS SVI_OUTQTY, NVL(C1.출고금액,0) AS SVI_OUTCOST
+		    , NVL(D1.재고수량,0) AS PROD_INVQTY, NVL(D1.재고금액/DECODE(D1.재고수량,0,NULL,D1.재고수량),0) AS PROD_INVUCOST, NVL(D1.재고금액,0) AS PROD_INVCOST
+		FROM (
+		        SELECT prod_code, icode_name, prod_name
+		            , gcomm_name, ucomm_stname, NVL(prod_baseqty,0) AS PROD_BASEQTY
+		            , prod_baseucost, NVL(prod_basecost,0) AS PROD_BASECOST
+		         FROM product
+		    ) A1,(
+		    SELECT PROD_CODE, "입고수량", "입고금액"
+		    FROM (
+		            WITH B AS(
+		                SELECT d.PROD_CODE, NVL(SUM(c.PP_QTY),0) AS "입고수량"
+		                FROM PRWA_PROD c, PRODUCT d, PRODWARE c1 
+		                WHERE c.PROD_CODE(+) = d.PROD_CODE
+		                AND c.ARR_NUM = c1.ARR_NUM
+		                <![CDATA[
+			                AND c1.ARR_DATE >= TO_DATE(#{stvStart})
+			                AND c1.ARR_DATE <= TO_DATE(#{stvEnd})
+		                ]]>
+		                GROUP BY d.PROD_CODE
+		            ), C AS(
+		                SELECT PROD_CODE, NVL(PROD_ACTUCOST,0) AS "실제원가"
+		                FROM PRODUCT
+		                )
+		                SELECT B.*, B.입고수량*C.실제원가 AS "입고금액"
+		                FROM B,C
+		                WHERE B.PROD_CODE = C.PROD_CODE
+		  		  )
+		    ) B1,(
+		    SELECT PROD_CODE, "출고수량", "출고금액"
+		    FROM (
+		            WITH D AS(
+		                SELECT f.PROD_CODE, NVL(SUM(e.RP_QTY),0) AS "출고수량"
+		                FROM REL_PROD e, PRODUCT f, RELEASE e1
+		                WHERE e.PROD_CODE(+) = f.PROD_CODE
+		                AND e.REL_NUM = e1.REL_NUM
+		                <![CDATA[
+			                AND e1.REL_DATE >= TO_DATE(#{stvStart})
+			                AND e1.REL_DATE <= TO_DATE(#{stvEnd})
+		                ]]>
+		                GROUP BY f.PROD_CODE
+		            ), E AS(
+		                SELECT f1.PROD_CODE, NVL(SUM(e1.RP_SUMCOST),0) AS "출고금액"
+		                FROM REL_PROD e1, PRODUCT f1
+		                WHERE e1.PROD_CODE(+) = f1.PROD_CODE
+		                GROUP BY f1.PROD_CODE
+		            )
+		            SELECT D.*, E.출고금액
+		            FROM D,E
+		            WHERE D.PROD_CODE = E.PROD_CODE
+		        )
+		    ) C1,(
+		     SELECT PROD_CODE, "재고수량", "재고금액"
+		    FROM (
+		            SELECT a.PROD_CODE
+		                , NVL(a.prod_baseqty + b.입고수량 - c.출고수량,0) AS "재고수량"
+		                , NVL(a.prod_basecost - b.입고금액 + c.출고금액,0) AS "재고금액"
+		            FROM PRODUCT a, (
+                                    SELECT PROD_CODE, "입고수량", "입고금액"
+                                    FROM (
+                                            WITH B AS(
+                                                SELECT d.PROD_CODE, NVL(SUM(c.PP_QTY),0) AS "입고수량"
+                                                FROM PRWA_PROD c, PRODUCT d, PRODWARE c1 
+                                                WHERE c.PROD_CODE(+) = d.PROD_CODE
+                                                AND c.ARR_NUM = c1.ARR_NUM
+                                                 <![CDATA[
+	                                                AND c1.ARR_DATE >= TO_DATE(#{stvStart})
+	                                                AND c1.ARR_DATE <= TO_DATE(#{stvEnd})
+                                                ]]>
+                                                GROUP BY d.PROD_CODE
+                                            ), C AS(
+                                                SELECT PROD_CODE, NVL(PROD_ACTUCOST,0) AS "실제원가"
+                                                FROM PRODUCT
+                                                )
+                                                SELECT B.*, B.입고수량*C.실제원가 AS "입고금액"
+                                                FROM B,C
+                                                WHERE B.PROD_CODE = C.PROD_CODE
+                                          )
+                                    ) b, 
+                                    (
+                                    SELECT PROD_CODE, "출고수량", "출고금액"
+                                    FROM (
+                                            WITH D AS(
+                                                SELECT f.PROD_CODE, NVL(SUM(e.RP_QTY),0) AS "출고수량"
+                                                FROM REL_PROD e, PRODUCT f, RELEASE e1
+                                                WHERE e.PROD_CODE(+) = f.PROD_CODE
+                                                AND e.REL_NUM = e1.REL_NUM
+                                                 <![CDATA[
+	                                                AND e1.REL_DATE >= TO_DATE(#{stvStart})
+	                                                AND e1.REL_DATE <= TO_DATE(#{stvEnd})
+	                                              ]]>   
+                                                GROUP BY f.PROD_CODE
+                                            ), E AS(
+                                                SELECT f1.PROD_CODE, NVL(SUM(e1.RP_SUMCOST),0) AS "출고금액"
+                                                FROM REL_PROD e1, PRODUCT f1
+                                                WHERE e1.PROD_CODE(+) = f1.PROD_CODE
+                                                GROUP BY f1.PROD_CODE
+                                            )
+                                            SELECT D.*, E.출고금액
+                                            FROM D,E
+                                            WHERE D.PROD_CODE = E.PROD_CODE
+                                        )
+                                    ) c 
+		            WHERE a.PROD_CODE = b.PROD_CODE
+		            AND b.PROD_CODE = c.PROD_CODE
+		        )
+		    ) D1
+		WHERE A1.PROD_CODE = B1.PROD_CODE(+)
+		AND B1.PROD_CODE = C1.PROD_CODE(+)
+		AND C1.PROD_CODE = D1.PROD_CODE(+)
+	</select>
+	
+	<insert id="insertValuationResult" parameterType="StovalItemVO">
+		<selectKey resultType="int" keyProperty="stvNo" order="BEFORE">
+			SELECT NVL(MAX(STV_NO),0) + 1
+			  FROM STOVAL_ITEM
+		</selectKey>
+		INSERT INTO STOVAL_ITEM (
+		    STV_NO,
+		    STV_NUM,
+		    RAWS_CODE,
+		    PROD_CODE,
+		    ICODE_NAME,
+		    PROD_NAME,
+		    GCOMM_NAME,
+		    UCOMM_NAME,
+		    PROD_BASEQTY,
+		    PROD_BASEUCOST,
+		    PROD_BASECOST,
+		    SVI_INQTY,
+		    SVI_INCOST,
+		    SVI_OUTQTY,
+		    SVI_OUTCOST,
+		    PROD_INVQTY,
+		    PROD_INVUCOST,
+		    PROD_INVCOST
+		) VALUES (
+		    #{stvNo,jdbcType=NUMERIC},
+		    #{stvNum,jdbcType=VARCHAR},
+		    #{rawsCode,jdbcType=VARCHAR},
+		    #{prodCode,jdbcType=VARCHAR},
+		    #{icodeName,jdbcType=VARCHAR},
+		    #{prodName,jdbcType=VARCHAR},
+		    #{gcommName,jdbcType=VARCHAR},
+		    #{ucommStname,jdbcType=VARCHAR},
+		    #{prodBaseqty,jdbcType=NUMERIC},
+		    #{prodBaseucost,jdbcType=NUMERIC},
+		    #{prodBasecost,jdbcType=NUMERIC},
+		    #{sviInqty,jdbcType=NUMERIC},
+		    #{sviIncost,jdbcType=NUMERIC},
+		    #{sviOutqty,jdbcType=NUMERIC},
+		    #{sviOutcost,jdbcType=NUMERIC},
+		    #{prodInvqty,jdbcType=NUMERIC},
+		    #{prodInvucost,jdbcType=NUMERIC},
+		    #{prodInvcost,jdbcType=NUMERIC}
+		)
+	</insert>
+	
+	<select id="selectRecentDoc" parameterType="StoValuVO" resultType="StoValuVO">
+		SELECT MAX(STV_NUM)
+        FROM STOVALU
+	</select>
+	
+	<delete id="deleteInventoryValuation" parameterType="StoValuVO">
+		DELETE FROM STOVALU
+		WHERE STV_NUM=#{stvNum}
+	</delete>
+	
+	
+	<insert id="insertCheck" parameterType="StoValuVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{stvNum},'N',SYSDATE)
+	</insert>
+</mapper>

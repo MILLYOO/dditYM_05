@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+
+<tiles-definitions>
+
+  <!-- 헤더, 푸터, script추가/수정해주세요 -->
+  <definition name="super" template="/WEB-INF/views/template.jsp">
+  	<put-attribute name="preScript" value="/includee/preScript.jsp" />
+  	<put-attribute name="codeScript" value="/includee/codeScript.jsp" />
+  	<put-attribute name="header" value="/includee/header.jsp" />
+  	<put-attribute name="left" value="/includee/left.jsp" />
+  	<put-attribute name="postScript" value="/includee/postScript.jsp" />
+  </definition>
+  
+  <!-- 	super로 상속하여 사용  -->
+<!--   <definition name="index" extends="super"> -->
+<!--   	<put-attribute name="content" value="/WEB-INF/views/index.jsp" /> -->
+<!--   </definition> -->
+
+  <definition name="stock/*" extends="super" >
+  	<put-attribute name="content" value="/WEB-INF/views/stock/{1}.jsp" />
+  </definition>
+  
+</tiles-definitions>

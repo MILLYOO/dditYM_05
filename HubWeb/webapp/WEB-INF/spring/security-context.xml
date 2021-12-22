@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-4.2.xsd">
+
+	<!-- 팩토리 통해 생성 -->
+	<beans:bean id="passwordEncoder" class="org.springframework.security.crypto.factory.PasswordEncoderFactories"
+		factory-method="createDelegatingPasswordEncoder" 
+	 />
+
+	<!-- db기반 인증 사용하기 위함-->
+	<beans:bean id="daoAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider" 
+		p:userDetailsService-ref="userDetailService"
+		p:passwordEncoder-ref="passwordEncoder"
+		p:hideUserNotFoundExceptions="false"
+	/>
+	
+	<!-- 	검증 결과 메세지 -->
+	<beans:bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource" 
+		p:basenames="kr.or.ddit.msgs.errorMessage,kr.or.ddit.msgs.message
+		,kr.or.ddit.msgs.infomessage
+        ,kr.or.ddit.msgs.Stockmessage
+        ,kr.or.ddit.msgs.produceMessage
+        ,kr.or.ddit.msgs.buyMessage
+        ,kr.or.ddit.msgs.salesMessage"
+	/>
+   <!-- 메세지 properties를 사용하기위한 Accessor 객체 -->   
+   <beans:bean id="messageSourceAccessor" class="org.springframework.context.support.MessageSourceAccessor" 
+      c:messageSource-ref="messageSource"
+   />
+   
+   <!--						 	 다국어지원										 -->
+	<beans:bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver" 
+		p:cookieName="languageCookie"
+		p:cookieMaxAge="#{60*60*24*7}"
+		p:cookiePath="/"
+	/>
+
+<!-- user-service 근본적인 인증데이터 , 사용자 등록-->
+	<authentication-manager id="authenticationManager">
+		<authentication-provider ref="daoAuthenticationProvider"/>
+	</authentication-manager>
+
+	<http auto-config="true" >
+		<form-login 
+			login-page="/index.do" 
+			login-processing-url="/login/loginProcess.do"
+			username-parameter="memId"
+			password-parameter="memPass"
+			always-use-default-target="true"
+			default-target-url="/common/main.do"
+			authentication-failure-handler-ref="loginFailureHandler"
+		/>
+		<logout logout-url="/login/logout.do" invalidate-session="true" delete-cookies="" logout-success-url="/" />
+
+		<intercept-url pattern="/common/main.do" access="isAuthenticated()"/>
+		<intercept-url pattern="/sales/*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_SALE')"/>
+		<intercept-url pattern="/produce/*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_PRODUCE')" />
+		<intercept-url pattern="/buy/*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_BUY')"/>
+		<intercept-url pattern="/info1/*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_INFO', 'ROLE_SALE', 'ROLE_PRODUCE', 'ROLE_BUY', 'ROLE_STOCK')"/>
+		<intercept-url pattern="/info2/*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_INFO', 'ROLE_SALE', 'ROLE_PRODUCE', 'ROLE_BUY', 'ROLE_STOCK')"/>
+		<intercept-url pattern="/stock/*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_STOCK')"/>
+		<intercept-url pattern="/board/noticeInsert.do" access="hasRole('ROLE_ADMIN')" />
+		<intercept-url pattern="/board/noticeUpdate.do" access="hasRole('ROLE_ADMIN')" />
+		<intercept-url pattern="/board/noticeDelete.do" access="hasRole('ROLE_ADMIN')" />
+
+		<csrf disabled="true"/>
+	</http>
+	<beans:bean class="org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository" id="csrfTokenRepository"/>
+		
+</beans:beans>

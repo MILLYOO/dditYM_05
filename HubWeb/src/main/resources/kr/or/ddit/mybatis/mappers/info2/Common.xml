@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.info2.codemanage.dao.CodeManageDAO">
+<sql id="selectFlag">
+	<where>
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(commCategory)">
+			<choose>
+				<when test="commCategory eq 'standard'">
+					comm_code like 'G%'
+				</when>
+				<when test="commCategory eq 'unit'">
+				 	comm_code like 'U%'
+				</when>
+				<when test="commCategory eq 'process'">
+					comm_code like 'K%'
+				</when>
+				<otherwise>
+					comm_code like 'G%' 
+					OR comm_code like 'K%'
+					OR comm_code like 'U%'
+				</otherwise>
+			</choose>
+		</if>
+	</where>
+</sql>
+
+
+<select id="selectCodeList" parameterType="CommonVO" resultType="CommonVO">
+	select SUBSTR(COMM_CODE,1,1) AS COMM_CATEGORY,LPAD(SUBSTR(COMM_CODE,2),4,0) AS COMM_CODE
+        , COMM_NAME from common 
+	<include refid="selectFlag"/>
+	order by comm_code
+	
+</select>
+
+
+<insert id="insertCode" parameterType="CommonVO">
+insert into common(comm_code,comm_name) 
+     values ( #{commCategory,jdbcType=VARCHAR} || (select LPAD(NVL(MAX(SUBSTR(COMM_CODE,2)),0)+1,4,0) AS COMM_CODE from common where SUBSTR(COMM_CODE,1,1) = #{commCategory}), #{commName,jdbcType=VARCHAR} )
+</insert>
+
+<update id="updateCode" parameterType="CommonVO">
+update common 
+set
+comm_name = #{commName,jdbcType=VARCHAR}
+where
+comm_code = #{commCategory,jdbcType=VARCHAR} || LPAD(#{commCode,jdbcType=VARCHAR},4,0)
+</update>
+
+<delete id="delteCode" parameterType="CommonVO">
+delete 
+from common
+where comm_code = #{commCategory,jdbcType=VARCHAR} || LPAD(#{commCode,jdbcType=VARCHAR},4,0)
+</delete>
+						<!-- division -->
+<insert id="insertDiv" parameterType="DivisionVO">
+insert into division(div_child, div_name, div_parent)
+values (#{divCategory,jdbcType=VARCHAR} || (select LPAD(NVL(MAX(SUBSTR(div_child,2)),0)+1,4,0) AS div_child from division where SUBSTR(div_child,1,1) = #{divCategory}), #{divName,jdbcType=VARCHAR}, #{divParent,jdbcType=VARCHAR})
+</insert>
+
+<update id="updateDiv" parameterType="DivisionVO">
+update division
+set
+div_name = #{divName,jdbcType=VARCHAR}
+where 
+div_child = #{divCategory,jdbcType=VARCHAR} || LPAD(#{divChild,jdbcType=VARCHAR},4,0)
+</update>
+
+<select id="selectDivList" parameterType="DivisionVO" resultType="DivisionVO">
+ select SUBSTR(DIV_CHILD,1,1) AS DIV_CATEGORY,LPAD(SUBSTR(DIV_CHILD,2),4,0) AS DIV_CHILD, DIV_NAME, DIV_PARENT FROM DIVISION
+ <where>
+	 <choose>
+	 	<when test="@org.apache.commons.lang3.StringUtils@isNotBlank(divChild)">
+	 		DIV_PARENT = #{divCategory,jdbcType=VARCHAR} || LPAD(#{divChild,jdbcType=VARCHAR},4,0)
+	 	</when>
+	 	<otherwise>
+	 		DIV_PARENT is null
+	 	</otherwise>
+	 </choose>
+ </where>
+ order by DIV_CHILD
+</select>
+
+<delete id="deleteDiv"	parameterType="DivisionVO">
+	delete 
+	from division
+	where div_Child = #{divCategory,jdbcType=VARCHAR} || LPAD(#{divChild,jdbcType=VARCHAR},4,0)
+</delete>
+
+</mapper>

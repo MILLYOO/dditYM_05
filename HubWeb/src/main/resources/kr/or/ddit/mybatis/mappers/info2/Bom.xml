@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.info2.bommanage.dao.BomManageDAO">
+
+	<sql id="searchFrag">
+		 <trim prefix="WHERE" prefixOverrides="AND">
+		 	<if test="bomVO neq null">
+		 		<choose>
+		 			<when test="bomVO.icodeName eq '제품'">
+		 				AND BOM_CODE = (SELECT BOM_CODE
+		                   FROM BOM
+		                WHERE PROD_CODE=#{bomVO.rawsCode,jdbcType=VARCHAR})
+		 			</when>
+		 			<when test="bomVO.icodeName eq '반제품'">
+		 				AND BOM_CODE = (SELECT BOM_CODE
+		                   FROM BOM
+		                WHERE RAWS_CODE=#{bomVO.rawsCode,jdbcType=VARCHAR})
+		 			</when>
+		 		</choose>
+		 	</if>   	
+		 </trim>
+	</sql>
+	<!--                             Bom                               -->
+	<select id="selectBomCode" resultType="string">
+		select bom_code
+		from bom
+		<if test="icodeName eq '제품'">
+				where prod_code = #{rawsCode, jdbcType=VARCHAR}
+		</if>
+		<if test="icodeName eq '반제품'">
+				where raws_code = #{rawsCode, jdbcType=VARCHAR}
+		</if>		
+
+	</select>
+	<resultMap type="BomVO" id="bomMap" autoMapping="true" >
+		<id column="BOM_CODE" property="bomCode"/>
+		<collection property="bomRawsList" javaType="java.util.List" ofType="BomRawsVO" autoMapping="true">
+			<result column="RAWS_CODE2" property="rawsCode"/>
+			<result column="ICODE_NAME2" property="icodeName"/>
+			<result column="RAWS_NAME2" property="rawsName"/>
+		</collection>
+	</resultMap>
+	
+	<select id ="selectBom"  resultMap="bomMap">
+	select A.BOM_CODE, A.ICODE_NAME, concat(A.prod_code, A.raws_code) RAWS_CODE, A.PROD_NAME RAWS_NAME, 
+	        B.BOM_NO,
+	        B.RAWS_CODE RAWS_CODE2,
+	        B.RAWS_NAME RAWS_NAME2,
+	        B.ICODE_NAME ICODE_NAME2,
+	        B.GCOMM_NAME,
+	        B.BRAW_NETQTY,
+	        B.BRAW_REQUIREQTY,
+	        B.BRAW_LOSSRATE,
+	        B.BRAW_LEVEL,
+	        B.BRAW_REGNUM,
+	        B.RAW_ADQINV
+	  from bom A, BOM_RAWS B
+	  WHERE A.BOM_CODE = B.BOM_CODE
+	    AND A.BOM_CODE = #{bomCode,jdbcType=NUMERIC}
+	</select>
+	
+	<insert id="insertBom" parameterType="BomVO">
+		<selectKey keyProperty="bomCode" resultType="int" order="BEFORE">
+			SELECT NVL(MAX(BOM_CODE),0)+1 FROM BOM
+		</selectKey>
+		INSERT INTO 
+		<if test="icodeName eq '제품'">
+		BOM(BOM_CODE, PROD_CODE, RAWS_CODE, ICODE_NAME, PROD_NAME, GCOMM_NAME)
+		VALUES(
+			#{bomCode,jdbcType=NUMERIC},
+			#{rawsCode,jdbcType=VARCHAR},
+			default,
+			#{icodeName,jdbcType=VARCHAR},
+			#{rawsName,jdbcType=VARCHAR},
+			#{gcommName,jdbcType=VARCHAR}
+		)
+		</if>
+		<if test="icodeName eq '반제품'">
+			BOM(BOM_CODE, PROD_CODE, RAWS_CODE, ICODE_NAME, PROD_NAME, GCOMM_NAME)
+		VALUES(
+			#{bomCode,jdbcType=NUMERIC},
+			default,
+			#{rawsCode,jdbcType=VARCHAR},
+			#{icodeName,jdbcType=VARCHAR},
+			#{rawsName,jdbcType=VARCHAR},
+			#{gcommName,jdbcType=VARCHAR}
+		)
+		</if>
+	</insert>
+	
+	<delete id="deleteBom" parameterType="BomVO">
+		delete from bom where bom_code = #{bomCode,jdbcType=NUMERIC}
+	</delete>
+	
+	<!--                             BomRaws                               -->
+
+	<select id="selectBomRawsList" parameterType="BomVO" resultType="BomRawsVO">
+		SELECT *
+		FROM BOM_RAWS
+		<include refid="searchFrag" />
+		order by bom_no
+	</select>
+
+	<insert id="insertBomRaws">
+	<selectKey keyProperty="bomNo" resultType="int" order="BEFORE">
+		SELECT NVL( MAX(BOM_NO) , 0) + 1 FROM BOM_RAWS
+	</selectKey>
+	insert into BOM_RAWS(
+	  BOM_NO
+	, BOM_CODE
+	, RAWS_CODE
+	, RAWS_NAME
+	, ICODE_NAME
+	, GCOMM_NAME
+	, BRAW_NETQTY
+	, BRAW_REQUIREQTY
+	, BRAW_LOSSRATE
+	, BRAW_LEVEL
+	, BRAW_REGNUM
+	, RAW_ADQINV)
+		
+	VALUES(
+	#{bomNo,jdbcType=NUMERIC},
+	#{bomCode,jdbcType=NUMERIC},
+	#{rawsCode,jdbcType=VARCHAR},
+	#{rawsName,jdbcType=VARCHAR},
+	#{icodeName,jdbcType=VARCHAR},
+	#{gcommName,jdbcType=VARCHAR},
+	#{brawNetqty,jdbcType=NUMERIC},
+	#{brawRequireqty,jdbcType=DOUBLE},
+	#{brawLossrate,jdbcType=NUMERIC},
+	1,
+	(select NVL(MAX(BRAW_REGNUM), 0)+1 from bom_raws where bom_No = #{bomNo,jdbcType=NUMERIC}),
+	#{rawAdqinv,jdbcType=NUMERIC}
+	)
+	</insert>
+	
+	<update id="updateBomRaws">
+	update bom_raws 
+	set
+	 BOM_CODE             =   #{bomCode,jdbcType=NUMERIC},        
+	 RAWS_CODE           =   #{rawsCode,jdbcType=VARCHAR},       
+	 RAWS_NAME           =   #{rawsName,jdbcType=VARCHAR},       
+	 ICODE_NAME          =   #{icodeName,jdbcType=VARCHAR},      
+	 GCOMM_NAME          =   #{gcommName,jdbcType=VARCHAR},      
+	 BRAW_NETQTY         =   #{brawNetqty,jdbcType=NUMERIC},     
+	 BRAW_REQUIREQTY     =   #{brawRequireqty,jdbcType=NUMERIC}, 
+	 BRAW_LOSSRATE       =   #{brawLossrate,jdbcType=NUMERIC},   
+	 BRAW_REGNUM         =   #{brawRegnum,jdbcType=NUMERIC},
+	 RAW_ADQINV         =   #{rawAdqinv,jdbcType=NUMERIC}       
+	where
+	bom_no = #{bomNo,jdbcType=NUMERIC}
+	</update>
+	
+	<delete id="deleteBomRaws">
+		delete from bom_raws where bom_no = #{bomNo,jdbcType=NUMERIC}
+	</delete>
+</mapper>

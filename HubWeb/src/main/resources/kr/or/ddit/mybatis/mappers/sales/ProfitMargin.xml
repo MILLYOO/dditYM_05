@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.sales.profitmarginstatus.dao.ProfitMarginStatusDAO">
+
+	<sql id="ProfitMarginFrag">
+		<trim prefix="WHERE" prefixOverrides="AND">
+			<if test="hubSearchVO neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND salc_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND salc_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.orbFinish)">
+             	<![CDATA[
+                 AND INSTR(ORB_FINISH, #{hubSearchVO.orbFinish}) > 0
+                ]]>
+				</if>
+			</if>
+		</trim>
+	</sql>
+	
+<!-- 	매출이익현황 거래처 -->
+	<select id="selectProfitListPC" parameterType="HubSearchVO" resultType="ProfitVO">
+	
+		SELECT G.BUYER_NAME 
+			  ,H.ICODE_NAME
+			  , G.PROD_CODE
+			  , H.PROD_NAME
+			  , H.GCOMM_NAME
+			  , H.UCOMM_STNAME AS UCOMM_NAME
+			  , G.SCP_QTY
+			  , G.SCP_SUMCOST
+			  , G.PROD_ACTUCOST
+			  , G.SCP_PROFIT
+			  , G.PROFIT_RATIO
+		FROM(	
+				SELECT T.BUYER_NAME, T.PROD_CODE, SUM(SCP_QTY) AS SCP_QTY, SUM(SCP_SUMCOST) AS SCP_SUMCOST
+				                    , SUM(PROD_ACTUCOST) AS PROD_ACTUCOST
+				                    , SUM(SCP_PROFIT) AS SCP_PROFIT
+				                    , ROUND((SUM(SCP_PROFIT)/SUM(SCP_SUMCOST))*100,2)||'%' AS PROFIT_RATIO
+				FROM 
+					(select d.*
+					from(
+						(SELECT A.BUYER_NAME
+						     , B.PROD_CODE
+						     , B.ICODE_NAME 
+						     , B.PROD_NAME 
+                             , a.salc_date
+						     , SUM(B.SCP_QTY) AS SCP_QTY 
+						     , SUM(B.SCP_SUMCOST) AS SCP_SUMCOST 
+						     , C.PROD_ACTUCOST AS PROD_UACTUCOST 
+						     , SUM(B.SCP_QTY)*PROD_ACTUCOST AS PROD_ACTUCOST 
+						     , SUM(B.SCP_SUMCOST)-SUM(B.SCP_QTY)*PROD_ACTUCOST AS SCP_PROFIT 
+						     , ROUND((SUM(B.SCP_SUMCOST)-SUM(B.SCP_QTY)*PROD_ACTUCOST)/(SUM(B.SCP_SUMCOST))*100,2)||'%' AS PROFIT_RATIO 
+						FROM SALESCLOSE A, SAL_PROD B, PRODUCT C 
+						WHERE A.SALC_NUM = B.SALC_NUM 
+						AND C.PROD_CODE(+) = B.PROD_CODE
+						GROUP BY A.BUYER_NAME, B.PROD_CODE,B.ICODE_NAME,B.PROD_NAME,C.PROD_ACTUCOST, a.salc_date
+						ORDER BY A.BUYER_NAME)D)
+					<include refid="ProfitMarginFrag"/>
+					)T
+				GROUP BY ROLLUP(T.BUYER_NAME, T.PROD_CODE)
+				) G, PRODUCT H							
+		WHERE G.PROD_CODE = H.PROD_CODE(+)
+		ORDER BY G.BUYER_NAME, H.ICODE_NAME	
+	</select>
+	
+<!-- 	매출이익현황 부서 -->
+	<select id="selectProfitListDP" parameterType="HubSearchVO" resultType="ProfitVO">
+		SELECT G.DEPT_NAME 
+			  ,H.ICODE_NAME
+			  , G.PROD_CODE
+			  , H.PROD_NAME
+			  , H.GCOMM_NAME
+			  , H.UCOMM_STNAME AS UCOMM_NAME
+			  , G.SCP_QTY
+			  , G.SCP_SUMCOST
+			  , G.PROD_ACTUCOST
+			  , G.SCP_PROFIT
+			  , G.PROFIT_RATIO
+		FROM(	
+				SELECT T.DEPT_NAME, T.PROD_CODE, SUM(SCP_QTY) AS SCP_QTY, SUM(SCP_SUMCOST) AS SCP_SUMCOST
+				                    , SUM(PROD_ACTUCOST) AS PROD_ACTUCOST
+				                    , SUM(SCP_PROFIT) AS SCP_PROFIT
+				                    , ROUND((SUM(SCP_PROFIT)/SUM(SCP_SUMCOST))*100,2)||'%' AS PROFIT_RATIO
+				FROM 
+					(select d.*
+					from(
+						(SELECT A.DEPT_NAME
+						     , B.PROD_CODE
+						     , B.ICODE_NAME 
+						     , B.PROD_NAME 
+                             , a.salc_date
+						     , SUM(B.SCP_QTY) AS SCP_QTY 
+						     , SUM(B.SCP_SUMCOST) AS SCP_SUMCOST 
+						     , C.PROD_ACTUCOST AS PROD_UACTUCOST 
+						     , SUM(B.SCP_QTY)*PROD_ACTUCOST AS PROD_ACTUCOST 
+						     , SUM(B.SCP_SUMCOST)-SUM(B.SCP_QTY)*PROD_ACTUCOST AS SCP_PROFIT 
+						     , ROUND((SUM(B.SCP_SUMCOST)-SUM(B.SCP_QTY)*PROD_ACTUCOST)/(SUM(B.SCP_SUMCOST))*100,2)||'%' AS PROFIT_RATIO 
+						FROM SALESCLOSE A, SAL_PROD B, PRODUCT C 
+						WHERE A.SALC_NUM = B.SALC_NUM 
+						AND C.PROD_CODE(+) = B.PROD_CODE
+						GROUP BY A.DEPT_NAME, B.PROD_CODE,B.ICODE_NAME,B.PROD_NAME,C.PROD_ACTUCOST, a.salc_date
+						ORDER BY A.DEPT_NAME)D)
+					<include refid="ProfitMarginFrag"/>
+					)T
+				GROUP BY ROLLUP(T.DEPT_NAME, T.PROD_CODE)
+				) G, PRODUCT H							
+		WHERE G.PROD_CODE = H.PROD_CODE(+)
+		ORDER BY G.DEPT_NAME, H.ICODE_NAME
+	
+	
+	</select>
+	
+<!-- 	매출이익현황 사원 -->
+	<select id="selectProfitListEMP" parameterType="HubSearchVO" resultType="ProfitVO">
+		SELECT G.EMP_NAME 
+			  ,H.ICODE_NAME
+			  , G.PROD_CODE
+			  , H.PROD_NAME
+			  , H.GCOMM_NAME
+			  , H.UCOMM_STNAME AS UCOMM_NAME
+			  , G.SCP_QTY
+			  , G.SCP_SUMCOST
+			  , G.PROD_ACTUCOST
+			  , G.SCP_PROFIT
+			  , G.PROFIT_RATIO
+		FROM(	
+				SELECT T.EMP_NAME, T.PROD_CODE, SUM(SCP_QTY) AS SCP_QTY, SUM(SCP_SUMCOST) AS SCP_SUMCOST
+				                    , SUM(PROD_ACTUCOST) AS PROD_ACTUCOST
+				                    , SUM(SCP_PROFIT) AS SCP_PROFIT
+				                    , ROUND((SUM(SCP_PROFIT)/SUM(SCP_SUMCOST))*100,2)||'%' AS PROFIT_RATIO
+				FROM 
+					(select d.*
+					from(
+						(SELECT A.EMP_NAME
+						     , B.PROD_CODE
+						     , B.ICODE_NAME 
+						     , B.PROD_NAME 
+                             , a.salc_date
+						     , SUM(B.SCP_QTY) AS SCP_QTY 
+						     , SUM(B.SCP_SUMCOST) AS SCP_SUMCOST 
+						     , C.PROD_ACTUCOST AS PROD_UACTUCOST 
+						     , SUM(B.SCP_QTY)*PROD_ACTUCOST AS PROD_ACTUCOST 
+						     , SUM(B.SCP_SUMCOST)-SUM(B.SCP_QTY)*PROD_ACTUCOST AS SCP_PROFIT 
+						     , ROUND((SUM(B.SCP_SUMCOST)-SUM(B.SCP_QTY)*PROD_ACTUCOST)/(SUM(B.SCP_SUMCOST))*100,2)||'%' AS PROFIT_RATIO 
+						FROM SALESCLOSE A, SAL_PROD B, PRODUCT C 
+						WHERE A.SALC_NUM = B.SALC_NUM 
+						AND C.PROD_CODE(+) = B.PROD_CODE
+						GROUP BY A.EMP_NAME, B.PROD_CODE,B.ICODE_NAME,B.PROD_NAME,C.PROD_ACTUCOST, a.salc_date
+						ORDER BY A.EMP_NAME)D)
+					<include refid="ProfitMarginFrag"/>
+					)T
+				GROUP BY ROLLUP(T.EMP_NAME, T.PROD_CODE)
+				) G, PRODUCT H							
+		WHERE G.PROD_CODE = H.PROD_CODE(+)
+		ORDER BY G.EMP_NAME, H.ICODE_NAME
+
+	
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+</mapper>

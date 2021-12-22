@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.sales.releaseprocessing.dao.ReleaseProcessingDAO">
+
+<!-- 최대값 셀렉트 -->
+	<select id="selectMaxId" parameterType="ReleaseVO" resultType="String">
+		select 'RAL'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(rel_num),10,10))+1,0)),2,0)
+		from RELEASE
+		WHERE SUBSTR(rel_num,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+	</select>
+<!-- 문서 등록 체크 -->
+<insert id="insertCheck" parameterType="ReleaseVO">
+	INSERT INTO DOC_CHECK
+	VALUES(#{relNum},'N',SYSDATE)
+</insert>
+
+
+<!-- 	조건문 완성 -->
+	<sql id="relearchFragPI">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="hubSearchVO neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND REO_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND REO_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+             </if>
+             
+          </if>      
+       </trim>
+   </sql>
+	<sql id="relsearchFrag">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="hubSearchVO neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND REL_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND REL_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.relFinish)">
+             	<![CDATA[
+                 AND INSTR(REL_FINISH, #{hubSearchVO.relFinish}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+
+
+<!-- 출고처리서 리스트 조회 -->
+	<select id="selectReleaseList"
+		parameterType="HubSearchVO"
+		resultType="ReleaseVO">
+		SELECT
+			    rel_num
+			  , rel_date
+			  , buyer_code
+			  , buyer_name
+			  , dept_name
+			  , emp_name
+			  , rel_vat
+			  , rel_result
+			  , rel_finish
+		FROM
+			    release
+	 	<include refid="relsearchFrag" />
+		ORDER BY REL_NUM	
+	</select>
+
+<!-- 출고처리서 등록 -->
+	<insert id="insertRelease" parameterType="ReleaseVO">
+		<selectKey resultType="string" keyProperty="relNum" order="BEFORE">
+			select 'RAL'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(rel_num),10,10))+1,0)),2,0)
+			from RELEASE
+			WHERE SUBSTR(rel_num,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+		</selectKey>
+			INSERT INTO release (
+						    rel_num
+						  , rel_date
+						  , buyer_code
+						  , buyer_name
+						  , dept_name
+						  , emp_name
+						  , rel_vat
+						  , rel_result
+						  , rel_finish
+						) VALUES (
+						    #{relNum,jdbcType=VARCHAR},
+							TO_DATE(#{relDate,jdbcType=DATE}, 'YYYY-MM-DD'),
+							(SELECT BUYER_CODE
+								FROM BUYER
+								WHERE BUYER_NAME = #{buyerName,jdbcType=VARCHAR}),
+							#{buyerName,jdbcType=VARCHAR},
+							#{deptName,jdbcType=VARCHAR},
+							#{empName,jdbcType=VARCHAR},
+							#{relVat,jdbcType=VARCHAR},
+							#{relResult,jdbcType=VARCHAR},
+							#{relFinish,jdbcType=VARCHAR}
+						)
+	</insert>
+	
+<!-- 	출고처리서 수정 -->
+	<update id="updateRelease" parameterType="ReleaseVO">
+		UPDATE release
+	    SET
+				REL_DATE        = #{relDate,jdbcType=DATE},
+				BUYER_CODE      = #{buyerCode,jdbcType=NUMERIC},
+				BUYER_NAME      = #{buyerName,jdbcType=VARCHAR},
+				DEPT_NAME       = #{deptName,jdbcType=VARCHAR},
+				EMP_NAME        = #{empName,jdbcType=VARCHAR},
+				REL_VAT         = #{relVat,jdbcType=VARCHAR},
+				REL_RESULT      = #{relResult,jdbcType=VARCHAR},
+				REL_FINISH      = #{relFinish,jdbcType=VARCHAR}
+		WHERE
+			    rel_num = #{relNum,jdbcType=VARCHAR}
+	</update>
+	
+<!-- 	출고처리서 삭제 -->
+	<delete id="deleteRelease" parameterType="ReleaseVO">
+		DELETE FROM RELEASE
+		WHERE 
+				REL_NUM = #{relNum,jdbcType=VARCHAR}
+	</delete>
+	
+	
+<!-- 출고처리서 - 제품 리스트 조회 -->
+	<select id="selectReleaseProdList" parameterType="ReleaseVO" resultType="RelProdVO">
+		SELECT
+			    rel_no
+			  , rel_num
+			  , prod_code
+			  , icode_name
+			  , prod_name
+			  , gcomm_name
+			  , ucomm_name
+			  , rp_date
+			  , rp_qty
+			  , rp_uprice
+			  , rp_sp
+			  , rp_vat
+			  , rp_sumcost
+			  , war_name
+			  , proj_name
+		FROM
+			    rel_prod
+		WHERE  REL_NUM = #{relNum,jdbcType=VARCHAR}
+		ORDER BY REL_NO
+	</select>
+	
+<!--  출고처리서 - 제품 등록 -->
+	<insert id="insertReleaseProd" parameterType="RelProdVO">
+		INSERT INTO rel_prod (
+						    rel_no
+						  , rel_num
+						  , prod_code
+						  , icode_name
+						  , prod_name
+						  , gcomm_name
+						  , ucomm_name
+						  , rp_date
+						  , rp_qty
+						  , rp_uprice
+						  , rp_sp
+						  , rp_vat
+						  , rp_sumcost
+						  , war_name
+						  , proj_name
+						) VALUES (
+							RELEASEPROD_SEQ.NEXTVAL,
+							#{relNum,jdbcType=VARCHAR},
+							#{prodCode,jdbcType=VARCHAR},
+							#{icodeName,jdbcType=VARCHAR},
+							#{prodName,jdbcType=VARCHAR},
+							#{gcommName,jdbcType=VARCHAR},
+							#{ucommName,jdbcType=VARCHAR},
+							TO_DATE(#{rpDate,jdbcType=DATE}, 'YYYY-MM-DD'),
+							#{rpQty,jdbcType=NUMERIC},
+							#{rpUprice,jdbcType=NUMERIC},
+							#{rpSp,jdbcType=NUMERIC},
+							#{rpVat,jdbcType=NUMERIC},
+							#{rpSumcost,jdbcType=NUMERIC},
+							#{warName,jdbcType=VARCHAR},
+							#{projName,jdbcType=VARCHAR}
+						)
+	</insert>
+	
+
+<!-- 상세품목 업데이트 -->
+	<update id="updateReleaseProd" parameterType="RelProdVO">
+		UPDATE rel_prod
+	    SET
+				REL_NUM           = #{relNum,jdbcType=VARCHAR},
+				PROD_CODE         = #{prodCode,jdbcType=VARCHAR},
+				ICODE_NAME        = #{icodeName,jdbcType=VARCHAR},
+				PROD_NAME         = #{prodName,jdbcType=VARCHAR},
+				GCOMM_NAME        = #{gcommName,jdbcType=VARCHAR},
+				UCOMM_NAME        = #{ucommName,jdbcType=VARCHAR},
+				RP_DATE           = #{rpDate,jdbcType=DATE},
+				RP_QTY            = #{rpQty,jdbcType=NUMERIC},
+				RP_UPRICE         = #{rpUprice,jdbcType=NUMERIC},
+				RP_SP             = #{rpSp,jdbcType=NUMERIC},
+				RP_VAT            = #{rpVat,jdbcType=NUMERIC},
+				RP_SUMCOST        = #{rpSumcost,jdbcType=NUMERIC},
+				WAR_NAME          = #{warName,jdbcType=VARCHAR},
+				PROJ_NAME         = #{projName,jdbcType=VARCHAR}
+		WHERE
+			    rel_no = #{relNo,jdbcType=NUMERIC}
+	</update>
+
+
+<!-- 출고처리서 - 제품 삭제 -->
+	<delete id="deleteReleaseProd" parameterType="RelProdVO">
+		DELETE FROM REL_PROD
+		WHERE REL_NO = #{relNo,jdbcType=NUMERIC}
+	</delete>
+
+<!-- 출고처리서 적용 목록 조회 -->
+	<select id="selectReleaseOrderListForPI"
+	parameterType="HubSearchVO" resultType="ReleaseOrderVO">
+		SELECT
+			    reo_num
+			  , reo_date
+			  , buyer_code
+			  , buyer_name
+			  , dept_name
+			  , emp_name
+			  , reo_vat
+			  , reo_result
+			  , reo_finish
+		FROM
+			    relord
+		<include refid="relearchFragPI"/>
+		ORDER BY REO_NUM
+	</select>
+
+<!-- 출고지시서 적용 위한 존재 여부 조회 -->
+	<select id="selectReleaseOrderForPI" parameterType="ReleaseOrderVO" resultType="ReleaseOrderVO">
+		SELECT
+		    reo_num
+		  , TO_CHAR(reo_date, 'YYYY/MM/DD') AS REO_DATE
+		  , buyer_code
+		  , buyer_name
+		  , dept_name
+		  , emp_name
+		  , reo_vat
+		  , reo_result
+		  , reo_finish
+		FROM
+		    relord
+		WHERE REO_NUM = #{reoNum,jdbcType=VARCHAR}
+	</select>
+
+<!-- 출고지시서 - 제품 적용을 위한 조회 목록 -->
+	<select id="selectReleaseOrderProdListForPI" parameterType="ReleaseOrderVO" resultType="ReleaseOrderProdVO">
+		SELECT
+		    A.reo_no
+		  , A.reo_num
+		  , A.prod_code
+		  , A.icode_name
+		  , A.prod_name
+		  , A.gcomm_name
+		  , A.ucomm_name
+		  , TO_CHAR(A.rop_date, 'YYYY/MM/DD') AS rop_date
+		  , A.rop_qty
+		  , A.rop_uprice
+		  , A.rop_sp
+		  , A.rop_vat
+		  , A.rop_sumcost
+		  , A.war_name
+		  , A.orb_num
+		  , A.proj_name
+		FROM
+		    relord_prod A, (SELECT REO_NUM 
+		    			   FROM	RELORD
+		    			   WHERE REO_NUM = #{reoNum,jdbcType=VARCHAR}) B 
+	    WHERE A.REO_NUM = B.REO_NUM
+	    ORDER BY A.REO_NO
+	</select>
+
+<!-- 출고지시서 - 제품 존재 여부 확인 위한 조회 -->
+	<select id="selectReleaseOrderProdForPI" parameterType="ReleaseOrderProdVO" resultType="ReleaseOrderProdVO">
+
+		SELECT
+			    reo_no
+			  , reo_num
+			  , prod_code
+			  , icode_name
+			  , prod_name
+			  , gcomm_name
+			  , ucomm_name
+			  , TO_CHAR(rop_date, 'YYYY/MM/DD') AS ROP_DATE
+			  , rop_qty
+			  , rop_uprice
+			  , rop_sp
+			  , rop_vat
+			  , rop_sumcost
+			  , war_name
+			  , orb_num
+			  , proj_name
+		FROM
+		    	relord_prod
+		WHERE REO_NO = #{reoNo,jdbcType=NUMERIC}
+		AND   REO_NUM = #{reoNum,jdbcType=VARCHAR}
+	</select>
+	
+<!-- 	창고별 제품 수량 증가 -->
+	<update id="increaseWarQty" parameterType="RelProdVO">
+		 UPDATE war_prod
+		    SET
+		        WP_qty = WP_QTY + #{rpQty,jdbcType=NUMERIC}
+		  WHERE
+			    war_code =  (select war_code
+			                   from warehouse
+			                  where war_name = #{warName,jdbcType=VARCHAR})
+			AND prod_code = #{prodCode,jdbcType=VARCHAR}
+	
+	</update>
+	
+<!-- 	창고별 제품 수량 감소 -->
+	<update id="decreaseWarQty" parameterType="RelProdVO">
+		 UPDATE war_prod
+		    SET
+		        WP_qty = WP_QTY - #{rpQty,jdbcType=NUMERIC}
+		  WHERE
+			    war_code =  (select war_code
+			                   from warehouse
+			                  where war_name = #{warName,jdbcType=VARCHAR})
+			AND prod_code = #{prodCode,jdbcType=VARCHAR}
+	</update>
+	
+<!-- 	전체 제품 수량 증가 -->
+	<update id="increaseQty" parameterType="RelProdVO">
+		UPDATE product
+		   SET
+		        PROD_QTY = PROD_QTY + #{rpQty,jdbcType=NUMERIC}
+		 WHERE
+		    prod_code = #{prodCode,jdbcType=VARCHAR}
+	</update>
+	
+<!-- 	전체 제품 수량 감소 -->
+	<update id="decreaseQty" parameterType="RelProdVO">
+		UPDATE product
+		   SET
+		        PROD_QTY = PROD_QTY - #{rpQty,jdbcType=NUMERIC}
+		 WHERE
+		    prod_code = #{prodCode,jdbcType=VARCHAR}
+	</update>
+	
+<!-- 	전체 제품 수량 수정 -->
+	<update id="updateQty" parameterType="RelProdVO">
+		UPDATE product
+	       SET
+	       	   PROD_QTY = (PROD_QTY  - (SELECT RP_QTY 
+	                                     FROM REL_PROD
+	                                    WHERE REL_NO = #{relNo,jdbcType=NUMERIC})) + #{rpQty,jdbcType=NUMERIC}
+	     WHERE
+	    	   prod_code = #{prodCode,jdbcType=VARCHAR}
+	</update>
+	
+<!-- 	창고 제품 수량 수정 -->
+	<update id="updateProdQty" parameterType="RelProdVO">
+		UPDATE war_prod
+	       SET
+	       	   WP_QTY = WP_QTY  - (SELECT RP_QTY 
+	                                     FROM REL_PROD
+	                                    WHERE REL_NO = #{relNo,jdbcType=NUMERIC}) + #{rpQty,jdbcType=NUMERIC}
+	     WHERE
+	    	   prod_code = #{prodCode,jdbcType=VARCHAR}
+	       AND
+	    	   war_code = (select  war_code
+	    	   				 from  warehouse
+	    	   				 where war_name = #{warName,jdbcType=VARCHAR})
+	</update>
+	
+	
+	
+	
+	
+</mapper>

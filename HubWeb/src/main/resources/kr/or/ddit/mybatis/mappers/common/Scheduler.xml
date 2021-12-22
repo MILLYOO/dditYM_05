@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.dao.SchedulerDAO">
+
+	<select id="selectSchedulerList" resultType="SchedulerVO">
+		SELECT  SC_TITLE
+			  , SC_START
+			  , SC_END
+			  , GROUP_ID
+		  FROM SCHEDULERM
+	</select>
+	
+	<insert id="insertScheduler" parameterType="SchedulerVO">
+		<selectKey resultType="int" keyProperty="scNo" order="BEFORE">
+			SELECT NVL(MAX(SC_NO),0) + 1
+			  FROM SCHEDULERM
+		</selectKey>
+		INSERT INTO SCHEDULERM (
+		    SC_NO,
+		    MEM_ID,
+		    SC_TITLE,
+		    SC_START,
+		    SC_END
+		) VALUES (
+			#{scNo,jdbcType=NUMERIC},
+			'b001',
+			#{scTitle,jdbcType=VARCHAR},
+			#{scStart,jdbcType=VARCHAR},
+			#{scEnd,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<select id="selectScNo" resultType="int">
+		SELECT SC_NO
+		  FROM SCHEDULERM
+		 WHERE SC_TITLE=#{scTitle,jdbcType=VARCHAR}
+		   AND SC_START=#{scStart,jdbcType=VARCHAR}
+		   AND SC_END=#{scEnd,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateSchedulter" parameterType="SchedulerVO">
+		UPDATE SCHEDULERM
+		   SET SC_TITLE=#{scTitle,jdbcType=VARCHAR}
+		      , SC_START=#{scStart,jdbcType=VARCHAR}
+		      , SC_END=#{scEnd,jdbcType=VARCHAR}
+		 WHERE SC_NO=#{scNo,jdbcType=NUMERIC}
+	</update>
+	
+	<delete id="deleteScheduler" parameterType="int">
+		DELETE FROM SCHEDULERM
+		 WHERE SC_NO=#{scNo,jdbcType=NUMERIC}
+	</delete>
+</mapper>

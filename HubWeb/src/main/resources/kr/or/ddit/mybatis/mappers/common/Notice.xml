@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.dao.NoticeDAO">
+
+<!-- 검색 조각 -->
+ 	<sql id="searchFrag">
+		<where>
+			<if test="searchVO neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(searchVO.searchWord)">
+				<choose>
+					<when test="searchVO.searchType eq'title'">
+						INSTR(NOTI_TITLE, #{searchVO.searchWord}) > 0
+					</when>
+					<when test="searchVO.searchType eq'content'">
+						NOTI_CONTENT LIKE '%'||#{searchVO.searchWord}||'%'
+					</when>
+					<otherwise>
+						INSTR(NOTI_TITLE, #{searchVO.searchWord}) > 0
+						OR
+						NOTI_CONTENT LIKE '%'||#{searchVO.searchWord}||'%'
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</sql>
+	
+	
+<!-- 	페이징 위한 전체 레코드 수 조회 -->
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+		  FROM NOTICE
+		<include refid="searchFrag" />
+	</select>
+	
+	<select id="selectNoticeList" resultType="NoticeVO" parameterType="PagingVO">
+		SELECT B.*
+		  FROM(
+				SELECT A.*, ROWNUM RNUM
+				FROM (
+					SELECT NOTI_NUM
+						 , NOTI_TITLE
+						 , NOTI_WRITER
+						 , TO_CHAR(NOTI_DATE,'YY/MM/DD') AS NOTI_DATE
+						 , NOTI_HITS
+						 ,(SELECT COUNT(*) FROM ATTATCH B WHERE B.NOTI_NUM=A.NOTI_NUM) AS ATTATCH_COUNT
+					FROM NOTICE A
+					<include refid="searchFrag" />
+					ORDER BY NOTI_NUM DESC
+				) A 
+			) B	
+		<![CDATA[
+		WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+		]]>
+	</select>
+	
+	<select id="selectNoticeListMain" resultType="NoticeVO">
+		SELECT B.*
+		  FROM(
+				SELECT A.*, ROWNUM RNUM
+				FROM (
+					SELECT NOTI_NUM
+						 , NOTI_TITLE
+						 , NOTI_WRITER
+						 , TO_CHAR(NOTI_DATE,'YY/MM/DD') AS NOTI_DATE
+						 , NOTI_HITS
+						 ,(SELECT COUNT(*) FROM ATTATCH B WHERE B.NOTI_NUM=A.NOTI_NUM) AS ATTATCH_COUNT
+					FROM NOTICE A
+					ORDER BY NOTI_NUM DESC
+				) A 
+			) B	
+		<![CDATA[
+		WHERE RNUM >= 1 AND RNUM <= 2
+		]]>
+	</select>
+	
+	<insert id="insertNotice" parameterType="NoticeVO">
+		<selectKey keyProperty="notiNum" resultType="int" order="BEFORE">
+			SELECT NOTICE_SEQ.NEXTVAL
+  			  FROM DUAL
+		</selectKey>
+		INSERT INTO NOTICE (
+		      NOTI_NUM
+		    , NOTI_WRITER
+		    , NOTI_TITLE
+		    , NOTI_CONTENT
+		) VALUES (
+			  #{notiNum,jdbcType=NUMERIC}
+			, '관리자'
+			, #{notiTitle,jdbcType=VARCHAR}
+			, #{notiContent,jdbcType=CLOB}
+		)
+	</insert>
+	
+	<update id="updateNotinumCount" parameterType="int">
+		UPDATE NOTICE
+		   SET NOTI_HITS = NOTI_HITS+1
+		 WHERE NOTI_NUM=#{notiNum}
+	</update>
+	
+	<resultMap type="NoticeVO" id="noticeMap" autoMapping="true">
+		<id property="notiNum" column="NO"/>
+		<collection property="attatchList" ofType="AttatchVO" autoMapping="true" />
+	</resultMap>
+	
+	<select id="selectNotice" parameterType="int" resultMap="noticeMap">
+		SELECT
+		      A.NOTI_NUM AS NO
+		    , NOTI_WRITER
+		    , TO_CHAR(NOTI_DATE,'YY/MM/DD') AS NOTI_DATE
+		    , NOTI_TITLE
+		    , NOTI_CONTENT
+		    , NOTI_HITS
+		    , ATT_NO, ATT_FILENAME, ATT_FILESIZE, ATT_DOWNLOAD, ATT_SAVENAME,ATT_FANCYSIZE
+		FROM
+		    NOTICE A LEFT OUTER JOIN ATTATCH B ON (A.NOTI_NUM=B.NOTI_NUM)
+		WHERE A.NOTI_NUM=#{notiNum}
+	</select>
+	
+	
+	<update id="updateNotice" parameterType="NoticeVO">
+		UPDATE NOTICE
+		   SET NOTI_TITLE=#{notiTitle,jdbcType=VARCHAR}
+			 , NOTI_CONTENT=#{notiContent,jdbcType=CLOB}
+		 WHERE NOTI_NUM=#{notiNum,jdbcType=NUMERIC}
+	</update>
+	
+	<delete id="deleteNotice" parameterType="NoticeVO">
+		DELETE FROM NOTICE
+		 WHERE NOTI_NUM=#{notiNum}
+	</delete>
+	
+</mapper>

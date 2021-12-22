@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.info2.warehousemanage.dao.WarehouseManageDAO">
+
+	<sql id="searchFrag">
+		 <trim prefix="WHERE" prefixOverrides="AND">
+		 	<if test="hubSearchVO neq null">
+		 		<if test="hubSearchVO.warCode neq null and hubSearchVO.warCode gt 0">
+		 			AND WAR_CODE = #{hubSearchVO.warCode,jdbcType=NUMERIC}
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.warName)">
+		 			AND INSTR(WAR_NAME, #{hubSearchVO.warName}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+		 			AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+		 			AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.warUse)">
+		 			AND INSTR(WAR_USE, #{hubSearchVO.warUse}) > 0
+		 		</if>
+		 		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.warAdd1)">
+		 			AND INSTR(WAR_ADD1, #{hubSearchVO.warAdd1}) > 0
+		 		</if>
+		 	</if>   	
+		 </trim>
+	</sql>
+
+	<select id="selectWarList" parameterType="HubSearchVO" resultType="WarehouseVO">
+		SELECT *
+		FROM WAREHOUSE
+		<include refid="searchFrag" />
+		order by war_code
+	</select>
+	
+	<insert id="insertWarehouse" parameterType="WarehouseVO">
+		<selectKey keyProperty="warCode" resultType="int" order="BEFORE">
+			SELECT NVL(MAX(WAR_CODE),0)+1 FROM WAREHOUSE
+		</selectKey>
+		INSERT INTO 
+		WAREHOUSE(WAR_CODE, WAR_NAME, WAR_USE)
+		VALUES(
+		#{warCode,jdbcType=NUMERIC}
+		, #{warName,jdbcType=VARCHAR}
+		, #{warUse,jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="insertWarehouseItem" parameterType="WarehouseVO">
+		<if test="itemList neq null">
+			<foreach collection="itemList" item="item" open="INSERT ALL" close="SELECT * FROM DUAL">
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(item.icodeName)">
+				<choose>
+					<when test="item.icodeName eq '제품'">
+							INTO WAR_PROD(PROD_CODE, WAR_CODE, WP_QTY)
+							VALUES (
+								#{item.rawsCode, jdbcType=NUMERIC},
+								#{warCode,jdbcType=VARCHAR},
+								0
+							)
+					</when>
+					<otherwise>
+							INTO WAR_RAW(RAW_CODE, WAR_CODE, WR_QTY)
+							VALUES (
+								#{item.rawsCode, jdbcType=NUMERIC},
+								#{warCode,jdbcType=VARCHAR},
+								0
+							)
+					</otherwise>
+				</choose>
+			</if>
+			</foreach>	
+		</if>
+	</insert>
+	
+	<select id="selectWarehouseItemCount" parameterType="WarehouseVO" resultType="int">
+		SELECT COUNT(*)
+		FROM (SELECT A.WAR_CODE, A.WR_QTY, A.RAW_CODE, B.ICODE_NAME FROM WAR_ITEM A, ITEM B
+		 WHERE WAR_CODE = #{warCode,jdbcType=VARCHAR}
+		   AND A.RAW_CODE = B.RAWS_CODE
+		   AND A.WR_QTY > 0) A
+	</select>
+	
+	<update id="updateWarehouse" parameterType="WarehouseVO">
+		UPDATE WAREHOUSE
+		SET
+			WAR_NAME = #{warName,jdbcType=VARCHAR}, 
+			WAR_USE  =	#{warUse,jdbcType=VARCHAR}
+		WHERE			
+			WAR_CODE = #{warCode,jdbcType=NUMERIC}
+	</update>
+	
+	<update id="updateWarehouseDetail" parameterType="WarehouseVO">
+		UPDATE WAREHOUSE
+		SET
+			WAR_ADD1 = #{warAdd1,jdbcType=VARCHAR},
+			WAR_ADD2 = #{warAdd2,jdbcType=VARCHAR},
+			EMP_NAME = #{empName,jdbcType=VARCHAR},
+			DEPT_NAME= #{deptName,jdbcType=VARCHAR},
+			WAR_LINE = #{warLine,jdbcType=VARCHAR},
+			WAR_USE = #{warUse,jdbcType=VARCHAR}
+		WHERE			
+			WAR_CODE = #{warCode,jdbcType=NUMERIC}
+	</update>
+	
+	<delete id="deleteWarehouseItem" parameterType="WarProdVO" >
+	BEGIN
+		DELETE FROM WAR_PROD WHERE WAR_CODE = #{warCode,jdbcType=NUMERIC};
+		DELETE FROM WAR_RAW WHERE WAR_CODE = #{warCode,jdbcType=NUMERIC};
+	END;
+	</delete>
+	
+	<delete id="deleteWarehouse" parameterType="WarehouseVO">
+		DELETE FROM WAREHOUSE WHERE WAR_CODE = #{warCode,jdbcType=NUMERIC}
+	</delete>
+</mapper>

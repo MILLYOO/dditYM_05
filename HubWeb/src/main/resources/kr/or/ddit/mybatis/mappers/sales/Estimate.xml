@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.sales.estimate.dao.EstimateDAO">
+	
+	<sql id="orderBy">
+		ORDER BY EST_CODE
+	</sql>
+	
+	
+	<sql id="searchFrag">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="hubSearchVO neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND EST_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND EST_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.estFinish)">
+             	<![CDATA[
+                 AND INSTR(EST_FINISH, #{hubSearchVO.estFinish}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+	
+	
+	
+	
+	<!-- 견적서 리스트 조회 -->
+	<select id="selectEstimateList"
+		parameterType="kr.or.ddit.common.vo.HubSearchVO"
+		resultType="kr.or.ddit.sales.vo.EstimateVO">
+		SELECT
+			    est_code,
+			    est_date, 
+			    buyer_code,
+			    buyer_name,
+			    buyer_receiver,
+				dept_name,
+				emp_name,
+			    est_vat,
+			    est_result,
+			    est_finish
+		FROM
+    			estimate  
+		<include refid="searchFrag" />
+		<include refid="orderBy" />
+	</select>
+
+	<!-- 견적서 등록 -->
+	<insert id="insertEstimate"
+		parameterType="kr.or.ddit.sales.vo.EstimateVO">	
+	<selectKey resultType="string" keyProperty="estCode" order="BEFORE">
+		select 'EST'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(EST_CODE),10,10))+1,0)),2,0)
+			from ESTIMATE
+			WHERE SUBSTR(EST_CODE,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+	</selectKey>
+	INSERT
+	INTO estimate (
+		est_code, est_date, buyer_code
+		, buyer_name,
+		buyer_receiver, dept_name
+		, emp_name
+		, est_vat
+		, est_result
+		, est_finish
+		
+	)
+	VALUES (
+		#{estCode,jdbcType=VARCHAR}
+		,TO_DATE(#{estDate,jdbcType=DATE}, 'YYYY-MM-DD')
+		,(SELECT BUYER_CODE
+			FROM BUYER
+			WHERE BUYER_NAME = #{buyerName,jdbcType=VARCHAR})
+		,#{buyerName,jdbcType=VARCHAR}
+		,#{buyerReceiver,jdbcType=VARCHAR}
+		,#{deptName,jdbcType=VARCHAR}
+		,#{empName,jdbcType=VARCHAR}
+		,#{estVat,jdbcType=VARCHAR}
+		,#{estResult,jdbcType=VARCHAR}
+		,#{estFinish,jdbcType=VARCHAR}
+	)
+
+	</insert>
+	
+<!-- 	견적서 상세 업데이트 -->
+	<update id="updateEstimateProd"
+		parameterType="EstimateProdVO">
+		
+		UPDATE ESTIMATE_PROD
+		SET
+			
+            est_code =          #{estCode,jdbcType=VARCHAR},
+            prod_code =         #{prodCode,jdbcType=VARCHAR},
+            icode_name =        #{icodeName,jdbcType=VARCHAR},
+            prod_name =         #{prodName,jdbcType=VARCHAR},
+            gcomm_name =        #{gcommName,jdbcType=VARCHAR},
+            ucomm_name =        #{ucommName,jdbcType=VARCHAR},
+            ep_date =           #{epDate,jdbcType=DATE},
+            ep_qty =            #{epQty,jdbcType=NUMERIC},
+            proj_name =         #{projName,jdbcType=VARCHAR},
+            ep_sp =             #{epSp,jdbcType=NUMERIC},
+            ep_vat =            #{epVat,jdbcType=NUMERIC},
+            ep_scost =          #{epScost,jdbcType=NUMERIC},
+            ep_uprice = 		#{epUprice,jdbcType=NUMERIC}
+        WHERE EST_NO =  #{estNo,jdbcType=NUMERIC}
+		
+		
+	</update>
+	
+	<!-- 견적서 수정 -->
+	<update id="updateEstimate"
+		parameterType="kr.or.ddit.sales.vo.EstimateVO">
+		
+		
+		UPDATE estimate
+    SET
+      est_code = #{estCode,jdbcType=VARCHAR}
+      ,est_date = #{estDate,jdbcType=DATE}
+      ,buyer_code = (SELECT BUYER_CODE 
+                      FROM BUYER
+                     WHERE BUYER_NAME = #{buyerName,jdbcType=VARCHAR})
+      ,buyer_name = #{buyerName,jdbcType=VARCHAR}
+      ,buyer_receiver = #{buyerReceiver,jdbcType=VARCHAR}
+      ,dept_name = #{deptName,jdbcType=VARCHAR}
+      ,emp_name = #{empName,jdbcType=VARCHAR}
+      ,est_vat = #{estVat,jdbcType=VARCHAR}
+      ,est_result = #{estResult,jdbcType=VARCHAR}
+      ,est_finish = #{estFinish,jdbcType=VARCHAR}
+WHERE
+    EST_CODE = #{estCode,jdbcType=VARCHAR}
+		
+	</update>
+	
+	<!-- 견적서 삭제 -->
+	<delete id="deleteEstimate"
+			parameterType="kr.or.ddit.sales.vo.EstimateVO">
+		DELETE FROM estimate
+		WHERE
+    		est_code = #{estCode,jdbcType=VARCHAR}
+	</delete>
+	
+	
+<!-- 	견적서 상세 삭제 -->
+	<delete id="deleteEstimateProd"
+		parameterType="EstimateProdVO"
+	>
+		DELETE FROM estimate_prod
+		WHERE
+    		est_no = #{estNo,jdbcType=NUMERIC}
+	</delete>
+	
+	
+	<!-- 상세리스트 조회 -->
+	<select id="selectEstimateProdList"
+		parameterType="kr.or.ddit.common.vo.HubSearchVO"
+		resultType="kr.or.ddit.sales.vo.EstimateProdVO"
+	>
+	SELECT
+	    A.est_no
+	  , A.est_code
+	  , A.prod_code
+	  , A.icode_name
+	  , A.prod_name
+	  , A.gcomm_name
+	  , A.ucomm_name
+	  , A.ep_date
+	  , A.ep_qty
+	  , A.proj_name
+	  , A.ep_sp
+	  , A.ep_vat
+	  , A.ep_scost
+	  , A.ep_uprice
+	  
+	FROM
+	    estimate_prod A, (SELECT
+	                                est_code
+	                            FROM
+	                                estimate
+	                            WHERE
+	                                EST_CODE = #{estCode,jdbcType=VARCHAR}) B
+	WHERE 
+	    A.EST_CODE = B.EST_CODE
+	ORDER BY A.EST_NO
+	</select>
+	
+	<!-- 상세내역 등록 -->
+	<insert id="insertEstimateProd"
+		parameterType="kr.or.ddit.sales.vo.EstimateProdVO"
+	>
+	INSERT INTO estimate_prod (
+		est_no,
+		est_code,
+	    prod_code,
+	    icode_name,
+	    prod_name,
+	    gcomm_name,
+	    ucomm_name,
+	    ep_date,
+	    ep_qty,
+	    proj_name,
+	    ep_sp,
+	    ep_vat,
+	    ep_scost,
+	    ep_uprice
+	    
+	) VALUES (
+	    ESTIMATEPROD_SEQ.NEXTVAL,
+	    #{estCode,jdbcType=VARCHAR},
+		#{prodCode,jdbcType=VARCHAR},
+		#{icodeName,jdbcType=VARCHAR},
+		#{prodName,jdbcType=VARCHAR},
+		#{gcommName,jdbcType=VARCHAR},
+		#{ucommName,jdbcType=VARCHAR},
+		TO_DATE(#{epDate,jdbcType=DATE}, 'YYYY/MM/DD'),
+		#{epQty,jdbcType=NUMERIC},
+		#{projName,jdbcType=VARCHAR},
+		#{epSp,jdbcType=NUMERIC},
+		#{epVat,jdbcType=NUMERIC},
+		#{epScost,jdbcType=NUMERIC},
+		#{epUprice,jdbcType=NUMERIC}
+		
+	)
+	</insert>
+	
+<!-- 	새로운 문서 체크 -->
+	<insert id="insertCheck" parameterType="AdjustmentVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{estCode},'N',SYSDATE)
+	</insert>
+</mapper>
+
+
+
+
+
+
+

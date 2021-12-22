@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.sales.orderbook.dao.OrderBookDAO">
+	
+	<sql id="orderByPI">
+		ORDER BY EST_CODE
+	</sql>
+	
+	<sql id="ORBorderBy">
+		ORDER BY ORB_NUM
+	</sql>
+	
+	<insert id="insertCheck" parameterType="OrderBookVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{orbNum},'N',SYSDATE)
+	</insert>
+	
+	
+	<select id="selectMaxId" parameterType="OrderBookVO" resultType="String">
+		select 'ORB'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(orb_num),10,10))+1,0)),2,0)
+		from orderbook
+		WHERE SUBSTR(ORB_NUM,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+	</select>
+	
+	<sql id="OBsearchFragPI">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="hubSearchVO neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND EST_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND EST_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.orbFinish)">
+             	<![CDATA[
+                 AND INSTR(ORB_FINISH, #{hubSearchVO.orbFinish}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+	<sql id="ORBsearchFrag">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="hubSearchVO neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND ORB_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND ORB_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.orbFinish)">
+             	<![CDATA[
+                 AND INSTR(ORB_FINISH, #{hubSearchVO.orbFinish}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+	
+	
+	
+	
+	<!-- 수주서 리스트 조회 -->
+	<select id="selectOrderbookList"
+		parameterType="kr.or.ddit.common.vo.HubSearchVO"
+		resultType="OrderBookVO">
+		SELECT
+			    orb_num
+			  , TO_CHAR(orb_date, 'YYYY/MM/DD') AS ORB_DATE
+			  , buyer_code
+			  , buyer_name
+			  , dept_name
+			  , emp_name
+			  , orb_vat
+			  , orb_result
+			  , orb_finish
+		FROM
+			    orderbook 
+		<include refid="ORBsearchFrag" />
+		<include refid="ORBorderBy" />
+	</select>
+
+	<!-- 수주서 등록 -->
+	<insert id="insertOrderbook"
+		parameterType="OrderBookVO">	
+	<selectKey resultType="string" keyProperty="orbNum" order="BEFORE">
+		select 'ORB'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(orb_num),10,10))+1,0)),2,0)
+		from orderbook
+		WHERE SUBSTR(ORB_NUM,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+	</selectKey>
+		INSERT INTO orderbook (
+			    orb_num
+			  , orb_date
+			  , buyer_code
+			  , buyer_name
+			  , dept_name
+			  , emp_name
+			  , orb_vat
+			  , orb_result
+			  , orb_finish
+			  , orb_appyn
+		) VALUES (
+			     #{orbNum,jdbcType=VARCHAR}
+				, TO_DATE(#{orbDate,jdbcType=DATE}, 'YYYY-MM-DD')
+				, (SELECT BUYER_CODE
+					FROM BUYER
+					WHERE BUYER_NAME = #{buyerName,jdbcType=VARCHAR})
+				, #{buyerName,jdbcType=VARCHAR}
+				, #{deptName,jdbcType=VARCHAR}
+				, #{empName,jdbcType=VARCHAR}
+				, #{orbVat,jdbcType=VARCHAR}
+				, #{orbResult,jdbcType=VARCHAR}
+				, #{orbFinish,jdbcType=VARCHAR}
+				, 'N'
+				)
+	</insert>
+	
+<!-- 	상세품목 업데이트 -->
+	<update id="updateOrderbookProd"
+		parameterType="OrderBookProdVO">
+		
+			UPDATE order_prod
+	    	SET
+				orb_num           =   #{orbNum,jdbcType=VARCHAR}, 
+				prod_code         =   #{prodCode,jdbcType=VARCHAR}, 
+				icode_name        =   #{icodeName,jdbcType=VARCHAR}, 
+				prod_name         =   #{prodName,jdbcType=VARCHAR}, 
+				gcomm_name        =   #{gcommName,jdbcType=VARCHAR}, 
+				ucomm_name        =   #{ucommName,jdbcType=VARCHAR}, 
+				op_date           =   TO_DATE(#{opDate,jdbcType=DATE}, 'YYYY-MM-DD'),
+				op_qty            =   #{opQty,jdbcType=NUMERIC}, 
+				op_uprice         =   #{opUprice,jdbcType=NUMERIC}, 
+				op_sp             =   #{opSp,jdbcType=NUMERIC}, 
+				op_vat            =   #{opVat,jdbcType=NUMERIC}, 
+				op_sumcost        =   #{opSumcost,jdbcType=NUMERIC}, 
+				est_code          =   #{estCode,jdbcType=VARCHAR}
+                                      
+			WHERE ORB_NO = #{orbNo,jdbcType=NUMERIC}
+	</update>
+	
+	<!-- 수주서 수정 -->
+	<update id="updateOrderbook"
+		parameterType="OrderBookVO">
+		UPDATE orderbook
+   		   SET
+			    orb_num =               #{orbNum,jdbcType=VARCHAR},
+       			orb_date         =      TO_DATE(#{orbDate,jdbcType=DATE}, 'YYYY-MM-DD'),
+				buyer_code       =      (SELECT BUYER_CODE 
+                     					   FROM BUYER
+                    				      WHERE BUYER_NAME = #{buyerName,jdbcType=VARCHAR}),
+				buyer_name       =      #{buyerName,jdbcType=VARCHAR},
+				dept_name        =      #{deptName,jdbcType=VARCHAR},
+				emp_name         =      #{empName,jdbcType=VARCHAR},
+				orb_vat          =      #{orbVat,jdbcType=VARCHAR},
+				orb_result       =      #{orbResult,jdbcType=VARCHAR},
+				orb_finish       =      #{orbFinish,jdbcType=VARCHAR}
+		 WHERE
+			    orb_num =               #{orbNum,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 수주서 삭제 -->
+	<delete id="deleteOrderbook"
+			parameterType="OrderBookVO">
+		DELETE FROM orderbook
+		WHERE
+    		orb_num = #{orbNum,jdbcType=VARCHAR}
+	</delete>
+	
+	
+<!-- 	견적서 상세 삭제 -->
+	<delete id="deleteOrderbookProd"
+		parameterType="OrderBookProdVO"
+	>
+		DELETE FROM order_prod
+    		WHERE ORB_NO = #{orbNo,jdbcType=NUMERIC}
+	</delete>
+	
+	
+	<!-- 상세리스트 조회 -->
+	<select id="selectOrderbookProdList"
+		parameterType="OrderBookVO"
+		resultType="OrderBookProdVO"
+	>
+	
+		SELECT
+			    orb_no
+			  , orb_num
+			  , prod_code
+			  , icode_name
+			  , prod_name
+			  , gcomm_name
+			  , ucomm_name
+			  , TO_CHAR(op_date, 'YYYY/MM/DD') AS OP_DATE
+			  , op_qty
+			  , op_uprice
+			  , proj_name
+			  , op_sp
+			  , op_vat
+			  , op_sumcost
+			  , est_code
+		FROM
+	    		order_prod
+	    		 
+	    WHERE  orb_num = #{orbNum,jdbcType=VARCHAR}
+	    ORDER BY ORB_NUM
+	</select>
+	
+	<!-- 상세내역 등록 -->
+	<insert id="insertOrderbookProd"
+		parameterType="OrderBookProdVO"
+	>
+	INSERT INTO order_prod (
+		    orb_no
+		  , orb_num
+		  , prod_code
+		  , icode_name
+		  , prod_name
+		  , gcomm_name
+		  , ucomm_name
+		  , op_date
+		  , op_qty
+		  , op_uprice
+		  , proj_name
+		  , op_sp
+		  , op_vat
+		  , op_sumcost
+		  , est_code
+		) VALUES (
+		    ORDERBOOKPROD_SEQ.NEXTVAL,
+			#{orbNum,jdbcType=VARCHAR},
+			#{prodCode,jdbcType=VARCHAR},
+			#{icodeName,jdbcType=VARCHAR},
+			#{prodName,jdbcType=VARCHAR},
+			#{gcommName,jdbcType=VARCHAR},
+			#{ucommName,jdbcType=VARCHAR},
+			TO_DATE(#{opDate,jdbcType=DATE}, 'YYYY-MM-DD'), 
+			#{opQty,jdbcType=NUMERIC},
+			#{opUprice,jdbcType=NUMERIC},
+			#{projName,jdbcType=VARCHAR},
+			#{opSp,jdbcType=NUMERIC},
+			#{opVat,jdbcType=NUMERIC},
+			#{opSumcost,jdbcType=NUMERIC},
+			#{estCode,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+<!-- 	견적서 적용 목록 조회 -->
+	<select id="selectEstimateListForPI" parameterType="EstimateVO" resultType="EstimateVO">
+		SELECT
+			    est_code,
+			    TO_CHAR(est_date, 'YYYY-MM-DD') as est_date,
+			    buyer_code,
+			    buyer_name,
+			    buyer_receiver,
+				dept_name,
+				emp_name,
+			    est_vat,
+			    est_result,
+			    est_finish
+		FROM
+    			estimate  
+		<include refid="OBsearchFragPI" />
+		ORDER BY EST_CODE
+	</select>
+	
+<!-- 	견적서 적용 위한 존재 여부 조회 -->
+	<select id="selectEstimateForPI" parameterType="EstimateVO" resultType="EstimateVO">
+		SELECT
+			    est_code
+			  , TO_CHAR(est_date, 'YYYY/MM/DD') AS EST_DATE
+			  , buyer_code
+			  , buyer_name
+			  , buyer_receiver
+			  , dept_name
+			  , emp_name
+			  , est_vat
+			  , est_result
+			  , est_finish
+			FROM
+			    estimate
+			WHERE EST_CODE = #{estCode,jdbcType=VARCHAR}
+	</select>
+	
+<!-- 	견적서-제품 존재 여부 확인 위한 조회 -->
+	<select id="selectEstimateProdForPI" parameterType="EstimateProdVO" resultType="EstimateProdVO">
+		SELECT
+	    est_no
+	  , est_code
+	  , prod_code
+	  , icode_name
+	  , prod_name
+	  , gcomm_name
+	  , ucomm_name
+	  , TO_CHAR(ep_date, 'YYYY/MM/DD') AS EP_DATE
+	  , ep_uprice
+	  , ep_qty
+	  , proj_name
+	  , ep_sp
+	  , ep_vat
+	  , ep_scost
+	  
+	FROM
+	    estimate_prod
+	WHERE 
+	    EST_NO = #{estNo,jdbcType=NUMERIC}
+	  AND
+		EST_CODE = #{estCode,jdbcType=VARCHAR}
+	  	
+	</select>
+	
+<!-- 	견적서 상세 적용을 위한 조회 목록 -->
+	<select id="selectEstimateProdListForPI" parameterType="EstimateVO" resultType="EstimateProdVO">
+		SELECT
+		    A.est_no
+		  , A.est_code
+		  , A.prod_code
+		  , A.icode_name
+		  , A.prod_name
+		  , A.gcomm_name
+		  , A.ucomm_name
+		  , TO_CHAR(A.ep_date, 'YYYY/MM/DD') AS EP_DATE
+		  , A.ep_qty
+		  , A.ep_uprice
+		  , A.proj_name
+		  , A.ep_sp
+		  , A.ep_vat
+		  , A.ep_scost
+		  
+		FROM
+		    estimate_prod A, (SELECT
+		                                est_code
+		                            FROM
+		                                estimate
+		                            WHERE
+		                                EST_CODE = #{estCode,jdbcType=VARCHAR}) B
+		WHERE 
+		    A.EST_CODE = B.EST_CODE
+		ORDER BY A.EST_NO
+	
+	
+	</select>
+	
+	<!-- 수주서 1건 조회 -->
+	<select id="selectOrderbook" parameterType="OrderBookVO" resultType="OrderBookVO">
+		SELECT  ORB_NUM
+			  , ORB_DATE
+			  , BUYER_CODE
+			  , BUYER_NAME
+			  , DEPT_NAME
+			  , EMP_NAME
+			  , ORB_VAT
+			  , ORB_RESULT
+			  , ORB_FINISH
+		FROM ORDERBOOK
+	   WHERE ORB_NUM=#{orbNum}
+	</select>
+	
+	<!-- 수주서-제품 1건 조회 -->
+	<select id="selectOrderbookProd" parameterType="OrderBookProdVO" resultType="OrderBookProdVO">
+	  SELECT ORB_NO
+		   , ORB_NUM
+		   , PROD_CODE
+		   , ICODE_NAME
+		   , PROD_NAME
+		   , GCOMM_NAME
+	       , UCOMM_NAME
+	       , OP_DATE
+	       , OP_QTY
+	       , OP_UPRICE
+	       , OP_SP
+	       , OP_VAT
+	       , OP_SUMCOST
+		   , EST_CODE
+		FROM ORDER_PROD
+	   WHERE ORB_NO = #{orbNo,jdbcType=VARCHAR}
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+

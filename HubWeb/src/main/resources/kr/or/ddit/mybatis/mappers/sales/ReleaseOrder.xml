@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.sales.releaseorder.dao.ReleaseOrderDAO">
+
+	<sql id="reoOrderByPI">
+		ORDER BY ORB_NUM
+	</sql>
+	
+	<sql id="reoOrderBy">
+		ORDER BY REO_NUM
+	</sql>
+	
+	<insert id="insertCheck" parameterType="ReleaseOrderVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{reoNum},'N',SYSDATE)
+	</insert>
+	
+	<select id="selectMaxId" parameterType="ReleaseOrderVO" resultType="String">
+		select 'REO'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(reo_num),10,10))+1,0)),2,0)
+		from RELORD
+		WHERE SUBSTR(REO_NUM,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+	</select>
+	
+	<sql id="reosearchFragPI">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="hubSearchVO neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND ORB_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND ORB_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+	<sql id="reosearchFrag">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="hubSearchVO neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND REO_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND REO_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.reoFinish)">
+             	<![CDATA[
+                 AND INSTR(REO_FINISH, #{hubSearchVO.reoFinish}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+	
+	
+	
+	
+	<!-- 출고지시서 리스트 조회 -->
+	<select id="selectReleaseOrderList"
+		parameterType="kr.or.ddit.common.vo.HubSearchVO"
+		resultType="ReleaseOrderVO">
+		SELECT
+		    reo_num
+		  , TO_CHAR(reo_date, 'YYYY/MM/DD') AS REO_DATE
+		  , buyer_code
+		  , buyer_name
+		  , dept_name
+		  , emp_name
+		  , reo_vat
+		  , reo_result
+		  , reo_finish
+		FROM
+		    relord
+		<include refid="reosearchFrag" />
+		ORDER BY REO_NUM
+	</select>
+
+	<!-- 출고지시서 등록 -->
+	<insert id="insertReleaseOrder"
+		parameterType="ReleaseOrderVO">	
+	<selectKey resultType="string" keyProperty="reoNum" order="BEFORE">
+		select 'REO'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(reo_num),10,10))+1,0)),2,0)
+		from relord
+		WHERE SUBSTR(reo_num,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+	</selectKey>
+		
+		INSERT INTO relord (
+				    reo_num
+				  , reo_date
+				  , buyer_code
+				  , buyer_name
+				  , dept_name
+				  , emp_name
+				  , reo_vat
+				  , reo_result
+				  , reo_finish
+				) VALUES (
+				    #{reoNum,jdbcType=VARCHAR},
+					TO_DATE(#{reoDate,jdbcType=DATE}, 'YYYY-MM-DD'),
+					(SELECT BUYER_CODE
+					FROM BUYER
+					WHERE BUYER_NAME = #{buyerName,jdbcType=VARCHAR}),
+					#{buyerName,jdbcType=VARCHAR},
+					#{deptName,jdbcType=VARCHAR},
+					#{empName,jdbcType=VARCHAR},
+					#{reoVat,jdbcType=VARCHAR},
+					#{reoResult,jdbcType=VARCHAR},
+					#{reoFinish,jdbcType=VARCHAR}
+				)
+	</insert>
+	
+<!-- 	상세품목 업데이트 -->
+	<update id="updateReleaseOrderProd"
+		parameterType="ReleaseOrderProdVO">
+		
+			UPDATE relord_prod
+   			SET                         
+   				reo_num         =        #{reoNum,jdbcType=VARCHAR},
+				prod_code       =        #{prodCode,jdbcType=VARCHAR},
+				icode_name      =        #{icodeName,jdbcType=VARCHAR},
+				prod_name       =        #{prodName,jdbcType=VARCHAR},
+				gcomm_name      =        #{gcommName,jdbcType=VARCHAR},
+				ucomm_name      =        #{ucommName,jdbcType=VARCHAR},
+				rop_date        =        #{ropDate,jdbcType=DATE},
+				rop_qty         =        #{ropQty,jdbcType=NUMERIC},
+				rop_uprice      =        #{ropUprice,jdbcType=NUMERIC},
+				rop_sp          =        #{ropSp,jdbcType=NUMERIC},
+				rop_vat         =        #{ropVat,jdbcType=NUMERIC},
+				rop_sumcost     =        #{ropSumcost,jdbcType=NUMERIC},
+				war_name        =        #{warName,jdbcType=VARCHAR},
+<!-- 				orb_num         =        #{orbNum,jdbcType=VARCHAR}, -->
+				proj_name       =        #{projName,jdbcType=VARCHAR}
+			WHERE
+			    reo_no = #{reoNo,jdbcType=NUMERIC}
+	</update>
+	
+	<!-- 출고지시서 수정 -->
+	<update id="updateReleaseOrder"
+		parameterType="ReleaseOrderVO">
+		
+		UPDATE relord
+		    SET
+			    reo_num        = #{reoNum,jdbcType=VARCHAR},
+		    	reo_date       = #{reoDate,jdbcType=DATE},
+				buyer_code     = #{buyerCode,jdbcType=NUMERIC},
+				buyer_name     = #{buyerName,jdbcType=VARCHAR},
+				dept_name      = #{deptName,jdbcType=VARCHAR},
+				emp_name       = #{empName,jdbcType=VARCHAR},
+				reo_vat        = #{reoVat,jdbcType=VARCHAR},
+				reo_result     = #{reoResult,jdbcType=VARCHAR},
+				reo_finish     = #{reoFinish,jdbcType=VARCHAR}
+		WHERE
+		    reo_num = #{reoNum,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 출고지시서 삭제 -->
+	<delete id="deleteReleaseOrder"
+			parameterType="ReleaseOrderVO">
+		DELETE FROM relord
+		WHERE
+    		reo_num        = #{reoNum,jdbcType=VARCHAR}
+	</delete>
+	
+	
+<!-- 	출고지시서 - 제품 삭제 -->
+	<delete id="deleteReleaseOrderProd"
+		parameterType="ReleaseOrderProdVO"
+	>
+		DELETE FROM RELORD_PROD
+    		WHERE reo_no = #{reoNo,jdbcType=NUMERIC}
+	</delete>
+	
+	
+	<!-- 출고지시서 - 제품 리스트 조회 -->
+	<select id="selectReleaseOrderProdList"
+		parameterType="ReleaseOrderVO"
+		resultType="ReleaseOrderProdVO"
+	>
+	
+		
+		SELECT
+		    reo_no
+		  , reo_num
+		  , prod_code
+		  , icode_name
+		  , prod_name
+		  , gcomm_name
+		  , ucomm_name
+		  , TO_CHAR(rop_date, 'YYYY/MM/DD') AS ROP_DATE
+		  , rop_qty
+		  , rop_uprice
+		  , rop_sp
+		  , rop_vat
+		  , rop_sumcost
+		  , war_name
+		  , orb_num
+		  , proj_name
+		FROM
+		    relord_prod
+		WHERE  reo_num = #{reoNum,jdbcType=VARCHAR}
+	    ORDER BY REO_NO
+	</select>
+	
+	<!-- 출고지시서 - 제품 등록 -->
+	<insert id="insertReleaseOrderProd"
+		parameterType="ReleaseOrderProdVO"
+	>
+		INSERT INTO relord_prod (
+					    reo_no
+					  , reo_num
+					  , prod_code
+					  , icode_name
+					  , prod_name
+					  , gcomm_name
+					  , ucomm_name
+					  , rop_date
+					  , rop_qty
+					  , rop_uprice
+					  , rop_sp
+					  , rop_vat
+					  , rop_sumcost
+					  , war_name
+					  , proj_name
+					) VALUES (
+						RELEASEORDERPROD_SEQ.NEXTVAL
+						, #{reoNum,jdbcType=VARCHAR}
+						, #{prodCode,jdbcType=VARCHAR}
+						, #{icodeName,jdbcType=VARCHAR}
+						, #{prodName,jdbcType=VARCHAR}
+						, #{gcommName,jdbcType=VARCHAR}
+						, #{ucommName,jdbcType=VARCHAR}
+						, TO_DATE(#{ropDate,jdbcType=DATE}, 'YYYY-MM-DD')
+						, #{ropQty,jdbcType=NUMERIC}
+						, #{ropUprice,jdbcType=NUMERIC}
+						, #{ropSp,jdbcType=NUMERIC}
+						, #{ropVat,jdbcType=NUMERIC}
+						, #{ropSumcost,jdbcType=NUMERIC}
+						, #{warName,jdbcType=VARCHAR}
+						, #{projName,jdbcType=VARCHAR}
+					)
+	</insert>
+	
+<!-- 	출고지시서 적용 목록 조회 -->
+	<select id="selectOrderbookListForPI" parameterType="HubSearchVO" resultType="OrderBookVO">
+		SELECT
+		    orb_num
+		  , TO_CHAR(orb_date, 'YYYY-MM-DD') as orb_date
+		  , buyer_code
+		  , buyer_name
+		  , dept_name
+		  , emp_name
+		  , orb_vat
+		  , orb_result
+		  , orb_finish
+		FROM
+		    orderbook
+		<include refid="reosearchFragPI" />
+		<include refid="reoOrderByPI" /> 
+	</select>
+	
+<!-- 	수주서 적용 위한 존재 여부 조회 -->
+	<select id="selectOrderbookForPI" parameterType="OrderBookVO" resultType="OrderBookVO">
+		SELECT
+		    orb_num
+		  , TO_CHAR(orb_date, 'YYYY/MM/DD') AS ORB_DATE
+		  , buyer_code
+		  , buyer_name
+		  , dept_name
+		  , emp_name
+		  , orb_vat
+		  , orb_result
+		  , orb_finish
+		FROM
+		    orderbook
+			WHERE orb_num = #{orbNum,jdbcType=VARCHAR}
+	</select>
+	
+<!-- 	수주서-제품 존재 여부 확인 위한 조회 -->
+	<select id="selectOrderbookProdForPI" parameterType="OrderBookProdVO" resultType="OrderBookProdVO">
+		
+		
+		SELECT
+			    orb_no
+			  , orb_num
+			  , prod_code
+			  , icode_name
+			  , prod_name
+			  , gcomm_name
+			  , ucomm_name
+			  , TO_CHAR(op_date, 'YYYY/MM/DD') AS OP_DATE
+			  , op_qty
+			  , op_uprice
+			  , proj_name
+			  , op_sp
+			  , op_vat
+			  , op_sumcost
+			  , est_code
+		FROM
+			    order_prod
+		WHERE ORB_NO = #{orbNo,jdbcType=NUMERIC}
+		
+		AND
+              ORB_NUM = #{orbNum,jdbcType=VARCHAR}
+	</select>
+	
+<!-- 	출고처리서 상세 적용을 위한 조회 목록 -->
+	<select id="selectOrderbookProdLIstForPI" parameterType="OrderBookVO" resultType="OrderBookProdVO">
+		SELECT
+			    A.ORB_NO
+			  , A.ORB_NUM
+			  , A.PROD_CODE
+			  , A.ICODE_NAME
+			  , A.PROD_NAME
+			  , A.GCOMM_NAME
+			  , A.UCOMM_NAME
+			  , TO_CHAR(A.OP_DATE, 'YYYY/MM/DD') AS OP_DATE
+			  , A.OP_QTY
+			  , A.OP_UPRICE
+			  , A.PROJ_NAME
+			  , A.OP_SP
+			  , A.OP_VAT
+			  , A.OP_SUMCOST
+			  , A.EST_CODE
+		FROM
+		    ORDER_PROD A, (SELECT
+		                                ORB_NUM
+		                            FROM
+		                                ORDERBOOK
+		                            WHERE
+		                                ORB_NUM = #{orbNum,jdbcType=VARCHAR}) B
+		WHERE 
+		    A.ORB_NUM = B.ORB_NUM
+		ORDER BY A.ORB_NO
+	</select>
+</mapper>

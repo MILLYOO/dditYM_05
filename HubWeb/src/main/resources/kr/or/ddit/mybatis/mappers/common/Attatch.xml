@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.dao.AttatchDAO">
+
+	<insert id="insertAttatches" parameterType="NoticeVO">
+		<selectKey resultType="int" keyProperty="startAttNo" order="BEFORE">
+			SELECT NVL(MAX(TO_NUMBER(ATT_NO)),0) + 1
+			  FROM ATTATCH
+		</selectKey>
+	
+		INSERT ALL
+	
+		<foreach collection="attatchList" item="atch" index="idx">
+			INTO ATTATCH (
+			    ATT_NO,    NOTI_NUM,
+			    ATT_FILENAME,    ATT_SAVENAME,
+			    ATT_MIME,    ATT_FILESIZE,
+			    ATT_FANCYSIZE
+			) VALUES (
+				#{startAttNo}+#{idx},
+				#{notiNum,jdbcType=NUMERIC},
+				#{atch.attFilename,jdbcType=VARCHAR},
+				#{atch.attSavename,jdbcType=VARCHAR},
+				#{atch.attMime,jdbcType=VARCHAR},
+				#{atch.attFilesize,jdbcType=NUMERIC},
+				#{atch.attFancysize,jdbcType=VARCHAR}
+			)
+		</foreach>
+		
+		SELECT * FROM DUAL
+	</insert>
+	
+	<delete id="deleteAttatches" parameterType="NoticeVO">
+		DELETE FROM ATTATCH
+		<where>
+			<choose>
+				<when test="delAttNos neq null and delAttNos.length gt 0">
+					<foreach collection="delAttNos" item="delAttNo" open="ATT_NO IN (" close=")" separator=",">
+						#{delAttNo}
+					</foreach>					
+				</when>
+				<otherwise>
+					 NOTI_NUM=#{notiNum}
+				</otherwise>
+			</choose>
+		</where>
+	</delete>
+	
+	
+	<select id="selectAttatch" parameterType="int" resultType="AttatchVO">
+		SELECT ATT_NO, ATT_FILENAME, ATT_SAVENAME, ATT_MIME, ATT_FILESIZE
+		FROM ATTATCH
+		WHERE ATT_NO = #{attNo}
+	</select>
+
+</mapper>

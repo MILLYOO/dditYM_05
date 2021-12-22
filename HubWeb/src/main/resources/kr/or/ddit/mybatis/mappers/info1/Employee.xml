@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.info1.employeemanage.dao.EmployeeManageDAO">
+	<sql id="searchFrag">
+		<trim prefix="WHERE" prefixOverrides="AND">
+			<if test="hubSearchVO neq null">
+				AND a.dept_code = b.dept_code(+)
+				<if
+					test="hubSearchVO.empCode neq null and hubSearchVO.empCode gt 0">
+					AND EMP_CODE = #{hubSearchVO.empCode,jdbcType=NUMERIC}
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+					AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+					AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+				</if>
+			</if>
+		</trim>
+	</sql>
+
+	<select id="selectEmpList" parameterType="HubSearchVO" resultType="EmployeeVO">
+		select 
+		a.emp_code
+	    , a.dept_code
+	    , TO_CHAR(a.emp_date, 'YYYY-MM-DD') emp_date
+	    , a.emp_name
+	    , a.emp_reg1
+	    , a.emp_reg2
+	    , a.emp_line
+	    , a.emp_tel
+	    , a.emp_mail
+	    , a.emp_rank
+	    , TO_CHAR(a.emp_fire, 'YYYY-MM-DD') emp_fire
+	    , a.emp_use
+	    , a.emp_add1
+	    , a.emp_add2
+		, b.dept_name
+		from employee a, department b
+		<include refid="searchFrag" />
+		order by EMP_CODE
+	</select>
+
+	<insert id="insertEmployee" parameterType="EmployeeVO">
+		<selectKey keyProperty="empCode" resultType="int" order="BEFORE">
+			SELECT NVL(MAX(EMP_CODE),0)+1 FROM EMPLOYEE
+		</selectKey>
+		INSERT INTO
+		EMPLOYEE(EMP_CODE, EMP_NAME,EMP_Tel, EMP_USE)
+		VALUES (
+		#{empCode,jdbcType=NUMERIC},
+		#{empName,jdbcType=VARCHAR},
+		#{empTel,jdbcType=VARCHAR},
+		'Y'
+		)
+	</insert>
+
+	<update id="updateEmployee" parameterType="EmployeeVO">
+		UPDATE EMPLOYEE
+		SET
+		EMP_NAME = #{empName, jdbcType=VARCHAR},
+		EMP_Tel = #{empTel, jdbcType=VARCHAR}
+		WHERE
+		EMP_CODE = #{empCode, jdbcType=NUMERIC}
+	</update>
+
+	<update id="updateEmployeeDetail" parameterType="EmployeeVO">
+		UPDATE EMPLOYEE
+		SET
+		DEPT_CODE = (SELECT DEPT_CODE FROM DEPARTMENT WHERE DEPT_NAME = #{deptName,jdbcType=VARCHAR}),
+		EMP_DATE = TO_DATE(#{empDate,jdbcType=DATE}, 'YYYY-MM-DD'),
+		EMP_REG1 = #{empReg1,jdbcType=NUMERIC},
+		EMP_REG2 = #{empReg2,jdbcType=NUMERIC},
+		EMP_ADD1 = #{empAdd1,jdbcType=VARCHAR},
+		EMP_LINE = #{empLine,jdbcType=VARCHAR},
+		EMP_TEL = #{empTel,jdbcType=VARCHAR},
+		EMP_MAIL = #{empMail,jdbcType=VARCHAR},
+		EMP_RANK = #{empRank,jdbcType=VARCHAR},
+		EMP_FIRE = TO_DATE(#{empFire,jdbcType=DATE}, 'YYYY-MM-DD'),
+		EMP_USE = #{empUse,jdbcType=VARCHAR},
+		EMP_ADD2 = #{empAdd2,jdbcType=VARCHAR}
+		WHERE
+		EMP_CODE = #{empCode, jdbcType=NUMERIC}
+	</update>
+
+	<delete id="deleteEmployee" parameterType="EmployeeVO">
+		DELETE FROM EMPLOYEE
+		WHERE
+		EMP_CODE = #{empCode, jdbcType=NUMERIC}
+	</delete>
+</mapper>

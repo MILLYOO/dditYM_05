@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.stock.stockmove.dao.StockMoveDAO">
+	
+	<sql id="orderByPI">
+		ORDER BY STM_NUM
+	</sql>
+	
+	<sql id="searchFrag">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="dateStart neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+                <![CDATA[
+                   STM_DATE BETWEEN TO_DATE(#{dateStart}, 'YYYY-MM-DD') AND TO_DATE(#{dateEnd}, 'YYYY-MM-DD')+0.99999
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(deptName)">
+             	<![CDATA[
+                AND INSTR(DEPT_NAME, #{deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(empName)">
+             	<![CDATA[
+                AND INSTR(EMP_NAME, #{empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(inwarName)">
+             	<![CDATA[
+                AND INSTR(INWAR_NAME, #{inwarName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(outwarName)">
+             	<![CDATA[
+                AND INSTR(OUTWAR_NAME, #{outwarName}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+   
+<!-- 재고이동문서 조회 -->
+	<select id="selectStockMoveList" parameterType="StockMoveVO" resultType="StockMoveVO">
+		SELECT STM_NUM
+			, TO_CHAR(STM_DATE,'YYYY') AS STOCK_YY
+	        , TO_CHAR(STM_DATE,'MM') AS STOCK_MM
+	        , TO_CHAR(STM_DATE,'DD') AS STOCK_DD
+		    , OUTWAR_NAME
+		    , INWAR_NAME
+		    , EMP_NAME
+		    , DEPT_NAME
+		    , STM_WHY
+		FROM
+		    STOCKMOVE
+		<include refid="searchFrag" />
+		<include refid="orderByPI" />
+	</select>
+	
+<!-- 재고이동문서 등록 -->
+	<insert id="insertStockMove" parameterType="StockMoveVO">
+		<selectKey resultType="String" keyProperty="stmNum" order="BEFORE">
+			 SELECT 'SE'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(MAX(TO_NUMBER(SUBSTR(STM_NUM,9,10))),0) + 1),2,0)
+			  FROM STOCKMOVE
+			 WHERE SUBSTR(STM_NUM,1,8)='SE'||TO_CHAR(SYSDATE,'YYMMDD')
+		</selectKey>
+		INSERT INTO STOCKMOVE (
+		    STM_NUM,
+		    STM_DATE,
+		    DEPT_NAME,
+		    OUTWAR_NAME,
+		    INWAR_NAME,
+		    EMP_NAME,
+		    STM_WHY
+		) VALUES (
+		     #{stmNum,jdbcType=VARCHAR}
+			, TO_DATE(#{stmDate,jdbcType=DATE},'YYYY/MM/DD')
+			, #{deptName,jdbcType=VARCHAR}
+			, #{outwarName,jdbcType=VARCHAR}
+			, #{inwarName,jdbcType=VARCHAR}
+			, #{empName,jdbcType=VARCHAR}
+			, #{stmWhy,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+<!-- 재고이동문서 수정 -->
+	<update id="updateStockMove" parameterType="StockMoveVO">
+		UPDATE STOCKMOVE
+	   	   SET STM_DATE=#{stmDate,jdbcType=DATE}
+			   , DEPT_NAME=#{deptName,jdbcType=VARCHAR}
+			   , OUTWAR_NAME=#{outwarName,jdbcType=VARCHAR}
+			   , INWAR_NAME=#{inwarName,jdbcType=VARCHAR}
+			   , EMP_NAME=#{empName,jdbcType=VARCHAR}
+			   , STM_WHY=#{stmWhy,jdbcType=VARCHAR}
+	     WHERE STM_NUM=#{stmNum}
+	</update>
+	
+<!-- 재고이동문서 삭제 -->
+	<delete id="deleteStockMove" parameterType="StockMoveVO">
+		DELETE FROM STOCKMOVE
+		WHERE STM_NUM = #{stmNum}
+	</delete>
+	
+	
+<!-- 재고이동 상세조회 -->
+	<select id="selectStockMoveItemList" parameterType="StomovItemVO" resultType="StomovItemVO">
+		 SELECT STM_NO
+		     , STM_NUM
+		     , CONCAT(RAWS_CODE, PROD_CODE) AS ITEM_CODE
+		     , ICODE_NAME
+		     , RAWS_NAME
+		     , GCOMM_NAME
+		     , UCOMM_NAME
+		     , SI_QTY
+		     , OUTWAR_NAME
+		     , INWAR_NAME
+		 FROM STOMOV_ITEM
+		 WHERE STM_NUM = #{stmNum}
+		 ORDER BY STM_NO 
+	</select>
+	
+<!-- 재고이동문서 삭제시 문서의 품목 전체 삭제 -->
+	<delete id="deleteAllStockMoveItem" parameterType="String">
+		DELETE FROM STOMOV_ITEM
+		WHERE STM_NUM = #{stmNum}
+	</delete>
+	
+<!-- 재고이동문서에 대한 품목 저장 -->
+	<insert id="insertStockMoveItem" parameterType="StomovItemVO">
+		<selectKey resultType="int" keyProperty="stmNo" order="BEFORE">
+			SELECT NVL(MAX(STM_NO),0) + 1
+			  FROM STOMOV_ITEM
+		</selectKey>
+		INSERT INTO STOMOV_ITEM (
+		    STM_NO,
+		    STM_NUM,
+		    RAWS_CODE,
+		    PROD_CODE,
+		    ICODE_NAME,
+		    RAWS_NAME,
+		    GCOMM_NAME,
+		    UCOMM_NAME,
+		    SI_QTY,
+		    OUTWAR_NAME,
+		    INWAR_NAME
+		) VALUES (
+		    #{stmNo,jdbcType=NUMERIC},
+		    #{stmNum,jdbcType=VARCHAR},
+		    #{rawsCode,jdbcType=VARCHAR},
+		    #{prodCode,jdbcType=VARCHAR},
+		    #{icodeName,jdbcType=VARCHAR},
+		    #{rawsName,jdbcType=VARCHAR},
+		    #{gcommName,jdbcType=VARCHAR},
+		    #{ucommName,jdbcType=VARCHAR},
+		    #{siQty,jdbcType=NUMERIC}
+		    , #{outwarName,jdbcType=VARCHAR}
+			, #{inwarName,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+<!-- 재고이동문서에 대한  품목 수정 -->
+	<update id="updateStockMoveItem" parameterType="StomovItemVO">
+		UPDATE STOMOV_ITEM
+		   SET RAWS_CODE = #{rawsCode,jdbcType=VARCHAR}
+		   	 , PROD_CODE = #{prodCode,jdbcType=VARCHAR}
+		   	 , ICODE_NAME = #{icodeName,jdbcType=VARCHAR}
+		   	 , RAWS
+		   	 _NAME = #{rawsName,jdbcType=VARCHAR}
+		   	 , GCOMM_NAME = #{gcommName,jdbcType=VARCHAR}
+		   	 , UCOMM_NAME = #{ucommName,jdbcType=VARCHAR}
+		   	 , SI_QTY = #{siQty,jdbcType=NUMERIC}
+		WHERE STM_NUM = #{stmNum,jdbcType=NUMERIC}  
+	</update>
+	
+	<delete id="deleteStockMoveItem" parameterType="StomovItemVO">
+		DELETE FROM STOMOV_ITEM
+		 WHERE STM_NO = #{stmNo}
+	</delete>
+	
+<!--원자재 - 품목 창고 수량 변경(입고) -->
+	<update id="updateInRaws" parameterType="StomovItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY + #{siQty}
+		WHERE RAW_CODE = #{rawsCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{inwarName}) 
+	</update>
+	
+<!--원자재 - 품목 창고수량 변경(출고 ) -->
+	<update id="updateOutRaws" parameterType="StomovItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY - #{siQty}
+		WHERE RAW_CODE = #{rawsCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{outwarName}) 
+	</update>
+	
+<!-- 제품 - 품목 창고 수량 변경(입고) -->
+	<update id="updateInProd" parameterType="StomovItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY + #{siQty}
+		WHERE PROD_CODE = #{prodCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{inwarName}) 
+	</update>
+	
+<!-- 제품 - 품목 창고수량 변경(출고 ) -->
+	<update id="updateOutProd" parameterType="StomovItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY - #{siQty}
+		WHERE PROD_CODE = #{prodCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{outwarName}) 
+	</update>
+	
+	
+	
+<!-- 삭제시 되돌리기 -->
+	<!--원자재 - 품목 창고 수량 변경(입고) -->
+	<update id="updateInRawsRev" parameterType="StomovItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY - #{siQty}
+		WHERE RAW_CODE = #{rawsCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{inwarName}) 
+	</update>
+	
+<!--원자재 - 품목 창고수량 변경(출고 ) -->
+	<update id="updateOutRawsRev" parameterType="StomovItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY + #{siQty}
+		WHERE RAW_CODE = #{rawsCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{outwarName}) 
+	</update>
+	
+<!-- 제품 - 품목 창고 수량 변경(입고) -->
+	<update id="updateInProdRev" parameterType="StomovItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY - #{siQty}
+		WHERE PROD_CODE = #{prodCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{inwarName}) 
+	</update>
+	
+<!-- 제품 - 품목 창고수량 변경(출고 ) -->
+	<update id="updateOutProdRev" parameterType="StomovItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY + #{siQty}
+		WHERE PROD_CODE = #{prodCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{outwarName}) 
+	</update>
+	
+	
+	<insert id="insertCheck" parameterType="StockMoveVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{stmNum},'N',SYSDATE)
+	</insert>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

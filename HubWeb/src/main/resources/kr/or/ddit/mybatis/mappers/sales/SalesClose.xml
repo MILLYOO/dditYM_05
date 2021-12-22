@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.sales.salesclose.dao.SalesCloseDAO">
+
+	<!-- 최대값 셀렉트 -->
+	<select id="selectMaxId" parameterType="ReleaseVO"
+		resultType="String">
+		select
+		'SAL'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(salc_num),10,10))+1,0)),2,0)
+		from SALESCLOSE
+		WHERE SUBSTR(salc_num,4,6) = TO_CHAR(SYSDATE, 'YYMMDD')
+	</select>
+
+<insert id="insertCheck" parameterType="SalesCloseVO">
+	INSERT INTO DOC_CHECK
+	VALUES(#{salcNum},'N',SYSDATE)
+</insert>
+
+
+	<!-- 조건문 완성 -->
+	<sql id="salsearchFragPI">
+		<trim prefix="WHERE" prefixOverrides="AND">
+			<if test="hubSearchVO neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND REL_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND REL_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+				</if>
+			</if>
+		</trim>
+	</sql>
+	<sql id="salsearchFrag">
+		<trim prefix="WHERE" prefixOverrides="AND">
+			<if test="hubSearchVO neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateStart)">
+                <![CDATA[
+                   AND SALC_DATE >= #{hubSearchVO.dateStart}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.dateEnd)">
+                <![CDATA[
+                   AND SALC_DATE <= #{hubSearchVO.dateEnd}
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.buyerName)">
+                <![CDATA[
+                AND INSTR(BUYER_NAME, #{hubSearchVO.buyerName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.empName)">
+                <![CDATA[
+                AND INSTR(EMP_NAME, #{hubSearchVO.empName}) > 0
+                ]]>
+				</if>
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(hubSearchVO.deptName)">
+                <![CDATA[
+                AND INSTR(DEPT_NAME, #{hubSearchVO.deptName}) > 0
+                ]]>
+				</if>
+			</if>
+		</trim>
+	</sql>
+
+
+	<!-- 매출마감 리스트 조회 -->
+	<select id="selectSalesCloseList" parameterType="HubSearchVO"
+		resultType="SalesCloseVO">
+		SELECT
+		salc_num
+		, TO_CHAR(salc_date, 'YYYY/MM/DD') AS SALC_DATE
+		, buyer_code
+		, buyer_name
+		, buyer_receiver
+		, dept_name
+		, emp_name
+		, salc_vat
+		FROM
+		salesclose
+		<include refid="salsearchFrag" />
+		ORDER BY salc_num
+	</select>
+
+	<!-- 매출마감서 등록 -->
+	<insert id="insertSalesClose" parameterType="SalesCloseVO">
+		<selectKey resultType="string" keyProperty="salcNum"
+			order="BEFORE">
+			select
+			'SAL'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(TO_NUMBER(substr(max(SALC_NUM),10,10))+1,0)),2,0)
+			from SALESCLOSE
+			WHERE SUBSTR(SALC_NUM,4,6) = TO_CHAR(SYSDATE,
+			'YYMMDD')
+		</selectKey>
+		INSERT INTO salesclose (
+		salc_num
+		, salc_date
+		, buyer_code
+		, buyer_name
+		, buyer_receiver
+		, dept_name
+		, emp_name
+		, salc_vat
+		) VALUES (
+		#{salcNum,jdbcType=VARCHAR},
+		#{salcDate,jdbcType=DATE},
+		#{buyerCode,jdbcType=NUMERIC},
+		#{buyerName,jdbcType=VARCHAR},
+		#{buyerReceiver,jdbcType=VARCHAR},
+		#{deptName,jdbcType=VARCHAR},
+		#{empName,jdbcType=VARCHAR},
+		#{salcVat,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 매출마감 수정 -->
+	<update id="updateSalesClose" parameterType="SalesCloseVO">
+		UPDATE salesclose
+		SET
+		SALC_DATE = #{salcDate,jdbcType=DATE},
+		BUYER_CODE = #{buyerCode,jdbcType=NUMERIC},
+		BUYER_NAME = #{buyerName,jdbcType=VARCHAR},
+		BUYER_RECEIVER = #{buyerReceiver,jdbcType=VARCHAR},
+		DEPT_NAME = #{deptName,jdbcType=VARCHAR},
+		EMP_NAME = #{empName,jdbcType=VARCHAR},
+		SALC_VAT = #{salcVat,jdbcType=VARCHAR}
+		WHERE
+		SALC_NUM = #{salcNum,jdbcType=VARCHAR}
+
+	</update>
+
+	<!-- 매출마감서 삭제 -->
+	<delete id="deleteSalesClose" parameterType="SalesCloseVO">
+		DELETE FROM
+		salesclose
+		WHERE
+		SALC_NUM = #{salcNum,jdbcType=VARCHAR}
+	</delete>
+
+
+	<!-- 매출마감서 - 제품 리스트 조회 -->
+	<select id="selectSalesCloseProdList"
+		parameterType="SalesCloseVO" resultType="SalProdVO">
+		SELECT
+		SALC_NO
+		, SALC_NUM
+		, PROD_CODE
+		, PROD_NAME
+		, GCOMM_NAME
+		, UCOMM_NAME
+		, TO_CHAR(SCP_DATE, 'YYYY/MM/DD') AS SCP_DATE
+		, SCP_QTY
+		, SCP_UPRICE
+		, SCP_SP
+		, SCP_VAT
+		, SCP_SUMCOST
+		, WAR_NAME
+		, PROJ_NAME
+		, REL_NUM
+		, ICODE_NAME
+		FROM
+		SAL_PROD
+		WHERE
+		SALC_NUM = #{salcNum,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 매출마감서 - 제품 등록 -->
+	<insert id="insertSalesCloseProd" parameterType="SalProdVO">
+		INSERT INTO
+		sal_prod (
+		salc_no
+		, salc_num
+		, prod_code
+		, prod_name
+		, gcomm_name
+		, ucomm_name
+		, scp_date
+		, scp_qty
+		, scp_uprice
+		, scp_sp
+		, scp_vat
+		, scp_sumcost
+		, war_name
+		, proj_name
+		, rel_num
+		, icode_name
+		) VALUES (
+		SALESCLOSEPROD_SEQ.NEXTVAL,
+		#{salcNum,jdbcType=VARCHAR},
+		#{prodCode,jdbcType=VARCHAR},
+		#{prodName,jdbcType=VARCHAR},
+		#{gcommName,jdbcType=VARCHAR},
+		#{ucommName,jdbcType=VARCHAR},
+		TO_DATE(#{scpDate,jdbcType=DATE}, 'YYYY-MM-DD'),
+		#{scpQty,jdbcType=NUMERIC},
+		#{scpUprice,jdbcType=NUMERIC},
+		#{scpSp,jdbcType=NUMERIC},
+		#{scpVat,jdbcType=NUMERIC},
+		#{scpSumcost,jdbcType=NUMERIC},
+		#{warName,jdbcType=VARCHAR},
+		#{projName,jdbcType=VARCHAR},
+		#{relNum,jdbcType=VARCHAR},
+		#{icodeName,jdbcType=VARCHAR}
+		)
+	</insert>
+
+
+	<!-- 매출마감서 - 제품 업데이트 -->
+	<update id="updateSalesCloseProd" parameterType="SalProdVO">
+		UPDATE sal_prod
+		SET
+		SALC_NUM = #{salcNum,jdbcType=VARCHAR},
+		PROD_CODE = #{prodCode,jdbcType=VARCHAR},
+		PROD_NAME = #{prodName,jdbcType=VARCHAR},
+		GCOMM_NAME = #{gcommName,jdbcType=VARCHAR},
+		UCOMM_NAME = #{ucommName,jdbcType=VARCHAR},
+		SCP_DATE = #{scpDate,jdbcType=DATE},
+		SCP_QTY = #{scpQty,jdbcType=NUMERIC},
+		SCP_UPRICE = #{scpUprice,jdbcType=NUMERIC},
+		SCP_SP = #{scpSp,jdbcType=NUMERIC},
+		SCP_VAT = #{scpVat,jdbcType=NUMERIC},
+		SCP_SUMCOST = #{scpSumcost,jdbcType=NUMERIC},
+		WAR_NAME = #{warName,jdbcType=VARCHAR},
+		PROJ_NAME = #{projName,jdbcType=VARCHAR},
+		REL_NUM = #{relNum,jdbcType=VARCHAR},
+		ICODE_NAME = #{icodeName,jdbcType=VARCHAR}
+
+		WHERE
+		salc_no = #{salcNo,jdbcType=NUMERIC}
+
+	</update>
+
+
+	<!-- 출고처리서 - 제품 삭제 -->
+	<delete id="deleteSalesCloseProd" parameterType="SalProdVO">
+		DELETE FROM
+		sal_prod
+		WHERE
+		salc_no = #{salcNo,jdbcType=NUMERIC}
+	</delete>
+
+	<!-- 출고처리서 적용 목록 조회 -->
+	<select id="selectSalesCloseListForPI"
+		parameterType="HubSearchVO" resultType="ReleaseVO">
+		SELECT
+		rel_num
+		, TO_CHAR(rel_date, 'YYYY/MM/DD') AS REL_DATE
+		, buyer_code
+		, buyer_name
+		, dept_name
+		, emp_name
+		, rel_vat
+		, rel_result
+		, rel_finish
+		FROM
+		release
+		<include refid="salsearchFragPI" />
+		ORDER BY REL_NUM
+	</select>
+
+	<!-- 출고지시서 적용 위한 존재 여부 조회 -->
+	<select id="selectSalesCloseForPI" parameterType="ReleaseVO"
+		resultType="ReleaseVO">
+		SELECT
+		rel_num
+		, TO_CHAR(rel_date, 'YYYY/MM/DD') as rel_date
+		, buyer_code
+		, buyer_name
+		, dept_name
+		, emp_name
+		, rel_vat
+		, rel_result
+		, rel_finish
+		FROM
+		release
+		WHERE REL_NUM = #{relNum,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 출고지시서 - 제품 적용을 위한 조회 목록 -->
+	<select id="selectSalesCloseProdListForPI"
+		parameterType="ReleaseVO" resultType="RelProdVO">
+		SELECT
+		A.rel_no
+		, A.rel_num
+		, A.prod_code
+		, A.icode_name
+		, A.prod_name
+		, A.gcomm_name
+		, A.ucomm_name
+		, TO_DATE(A.rp_date, 'YYYY/MM/DD') AS RP_DATE
+		, A.rp_qty
+		, A.rp_uprice
+		, A.rp_sp
+		, A.rp_vat
+		, A.rp_sumcost
+		, A.war_name
+		, A.proj_name
+		FROM
+		rel_prod A, (SELECT REL_NUM
+		FROM rel_prod
+		WHERE REL_NUM = #{relNum,jdbcType=VARCHAR}) B
+		WHERE A.REL_NUM = B.REL_NUM
+		ORDER BY A.REL_NO
+	</select>
+
+	<!-- 출고지시서 - 제품 존재 여부 확인 위한 조회 -->
+	<select id="selectSalesCloseProdForPI" parameterType="RelProdVO"
+		resultType="RelProdVO">
+
+		SELECT
+		rel_no
+		, rel_num
+		, prod_code
+		, icode_name
+		, prod_name
+		, gcomm_name
+		, ucomm_name
+		, TO_CHAR(rp_date, 'YYYY-MM-DD') AS RP_DATE
+		, rp_qty
+		, rp_uprice
+		, rp_sp
+		, rp_vat
+		, rp_sumcost
+		, war_name
+		, proj_name
+		FROM
+		rel_prod
+		WHERE REL_NO = #{relNo,jdbcType=NUMERIC}
+		AND REL_NUM =
+		#{relNum,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<select id="selectSalesGraph" resultType="RelProdVO">
+		SELECT PROD_CODE, PROD_NAME, SCP_SUMCOST, PROD_RATIO
+		FROM (
+		SELECT ROWNUM, A.*, round(RATIO_TO_REPORT(A.SCP_SUMCOST) over(), 3)*100 AS PROD_RATIO
+		FROM(
+		SELECT PROD_CODE, PROD_NAME, SUM(SCP_SUMCOST) AS SCP_SUMCOST
+		FROM SAL_PROD
+		GROUP BY PROD_CODE, PROD_NAME
+		) A
+		ORDER BY SCP_SUMCOST DESC
+		) B
+		<![CDATA[
+		WHERE ROWNUM <= 12
+		]]>
+	</select>
+</mapper>

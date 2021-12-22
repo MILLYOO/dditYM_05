@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="kr.or.ddit.produce.productincoming.dao.ProductIncomingDAO">
+
+	<sql id="orderByPW">
+		ORDER BY ARR_NUM
+	</sql>
+	
+	<sql id="searchFragPW">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="dateStart neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+                <![CDATA[
+                 ARR_DATE BETWEEN TO_DATE(#{dateStart}, 'YYYY/MM/DD') AND TO_DATE(#{dateEnd}, 'YYYY/MM/DD')+0.99999
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(empName)">
+             	<![CDATA[
+            	 AND INSTR(EMP_NAME, #{empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(deptName)">
+             	<![CDATA[
+                 AND INSTR(DEPT_NAME, #{deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(buyerName)">
+             	<![CDATA[
+                 AND INSTR(BUYER_NAME, #{buyerName}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+   
+   
+	<!-- 생산품입고처리 목록 -->
+	<select id="selectProdIncomingList" parameterType="HubSearchVO" resultType="ProdWareVO">
+		SELECT ARR_NUM
+  			 , TO_CHAR(ARR_DATE,'YYYY') AS PDC_YY
+             , TO_CHAR(ARR_DATE,'MM') AS PDC_MM
+             , TO_CHAR(ARR_DATE,'DD') AS PDC_DD
+             , TO_CHAR(ARR_DATE,'YYYY/MM/DD') AS ARR_DATE
+		     , BUYER_CODE
+		     , BUYER_NAME
+		     , DEPT_NAME
+		     , EMP_NAME
+		FROM PRODWARE
+		<include refid="searchFragPW" />
+		<include refid="orderByPW" />
+	</select>
+
+	<!-- 생산품입고처리-품목 목록 -->
+	<select id="selectProdIncomingRawsList" parameterType="ProdWareVO" resultType="PrwaProdVO">
+		SELECT ARR_NO
+		     , ARR_NUM
+		     , PROD_CODE
+		     , ICODE_NAME
+		     , PROD_NAME
+		     , GCOMM_NAME
+		     , PP_QTY
+		     , KCOMM_NAME
+		     , WAR_NAME
+		     , PROJ_NAME
+		     , INST_NUM
+		     , PP_BADNUM
+		     , RAWS_CODE
+		FROM PRWA_PROD
+	   WHERE ARR_NUM=#{arrNum,jdbcType=VARCHAR}
+	   ORDER BY ARR_NO
+	</select>
+	
+	<!-- 생산품입고처리 1건 조회 -->
+	<select id="selectProdIncoming" parameterType="ProdWareVO" resultType="ProdWareVO">
+		SELECT ARR_NUM
+  			 , TO_CHAR(ARR_DATE,'YYYY') AS PDC_YY
+             , TO_CHAR(ARR_DATE,'MM') AS PDC_MM
+             , TO_CHAR(ARR_DATE,'DD') AS PDC_DD
+             , TO_CHAR(ARR_DATE,'YYYY/MM/DD') AS ARR_DATE
+		     , BUYER_CODE
+		     , BUYER_NAME
+		     , DEPT_NAME
+		     , EMP_NAME
+		FROM PRODWARE
+	   WHERE ARR_NUM=#{arrNum,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 생산품입고처리-품목 1건 조회 -->
+	<select id="selectProdIncomingRaws" parameterType="PrwaProdVO" resultType="PrwaProdVO">
+		SELECT ARR_NO
+		     , ARR_NUM
+		     , PROD_CODE
+		     , ICODE_NAME
+		     , PROD_NAME
+		     , GCOMM_NAME
+		     , PP_QTY
+		     , KCOMM_NAME
+		     , WAR_NAME
+		     , PROJ_NAME
+		     , INST_NUM
+		     , PP_BADNUM
+   		     , RAWS_CODE
+		FROM PRWA_PROD
+	   WHERE ARR_NO=#{arrNo,jdbcType=NUMERIC}
+	</select>
+	
+	
+	<!-- 생산품입고처리 등록 -->
+	<insert id="insertProdIncoming" parameterType="ProdWareVO">
+		<selectKey resultType="String" keyProperty="arrNum" order="BEFORE">
+			SELECT 'PR'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(MAX(TO_NUMBER(SUBSTR(ARR_NUM,9,10))),0) + 1),2,0)
+			  FROM PRODWARE
+			 WHERE SUBSTR(ARR_NUM,1,8)='PR'||TO_CHAR(SYSDATE,'YYMMDD')
+		</selectKey>
+		INSERT INTO PRODWARE (
+		    ARR_NUM
+		  , ARR_DATE
+		  , BUYER_CODE
+		  , BUYER_NAME
+		  , DEPT_NAME
+		  , EMP_NAME
+		) VALUES (
+			#{arrNum,jdbcType=VARCHAR}
+		  , TO_DATE(#{arrDate,jdbcType=DATE},'YYYY/MM/DD')
+		  , #{buyerCode,jdbcType=NUMERIC}
+		  , #{buyerName,jdbcType=VARCHAR}
+		  , #{deptName,jdbcType=VARCHAR}
+		  , #{empName,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- 생산품입고처리 수정 -->
+	<update id="updateProdIncoming" parameterType="ProdWareVO">
+		UPDATE PRODWARE
+		   SET ARR_DATE=#{arrDate,jdbcType=DATE}
+			 , BUYER_CODE=#{buyerCode,jdbcType=NUMERIC}
+			 , BUYER_NAME=#{buyerName,jdbcType=VARCHAR}
+			 , DEPT_NAME=#{deptName,jdbcType=VARCHAR}
+			 , EMP_NAME=#{empName,jdbcType=VARCHAR}
+		 WHERE ARR_NUM=#{arrNum,jdbcType=NUMERIC}
+	</update>
+	
+	<!-- 생산품입고처리-품목 등록 -->
+	<insert id="insertProdIncomingRaws" parameterType="PrwaProdVO">
+		<selectKey resultType="int" keyProperty="arrNo" order="BEFORE">
+			SELECT NVL(MAX(ARR_NO),0) + 1
+			  FROM PRWA_PROD
+		</selectKey>
+		INSERT INTO PRWA_PROD (
+		    ARR_NO
+		  , ARR_NUM
+		  , PROD_CODE
+		  , ICODE_NAME
+		  , PROD_NAME
+		  , GCOMM_NAME
+		  , PP_QTY
+		  , KCOMM_NAME
+		  , WAR_NAME
+		  , PROJ_NAME
+		  , PP_BADNUM
+		  , RAWS_CODE
+		  , INST_NUM
+		) VALUES (
+		    #{arrNo,jdbcType=NUMERIC}
+	      , #{arrNum,jdbcType=VARCHAR}
+	      , #{prodCode,jdbcType=VARCHAR}
+	      , #{icodeName,jdbcType=VARCHAR}
+	      , #{prodName,jdbcType=VARCHAR}
+	      , #{gcommName,jdbcType=VARCHAR}
+	      , #{ppQty,jdbcType=NUMERIC}
+	      , #{kcommName,jdbcType=VARCHAR}
+	      , #{warName,jdbcType=VARCHAR}
+	      , #{projName,jdbcType=VARCHAR}
+	      , #{ppBadnum,jdbcType=NUMERIC}
+	      , #{rawsCode,jdbcType=VARCHAR}
+	      , #{instNum,jdbcType=VARCHAR}
+		)
+	</insert>	
+	
+	<!-- 생산품입고처리-품목 수정 -->
+	<update id="updateProdIncomingRaws" parameterType="PrwaProdVO">
+		UPDATE PRWA_PROD
+		   SET PROD_CODE=#{prodCode,jdbcType=VARCHAR}
+			 , ICODE_NAME=#{icodeName,jdbcType=VARCHAR}
+			 , PROD_NAME=#{prodName,jdbcType=VARCHAR}
+			 , GCOMM_NAME=#{gcommName,jdbcType=VARCHAR}
+			 , PP_QTY=#{ppQty,jdbcType=NUMERIC}
+			 , KCOMM_NAME=#{kcommName,jdbcType=VARCHAR}
+			 , WAR_NAME=#{warName,jdbcType=VARCHAR}
+			 , PROJ_NAME=#{projName,jdbcType=VARCHAR}
+			 , PP_BADNUM=#{ppBadnum,jdbcType=NUMERIC}
+			 , RAWS_CODE=#{rawsCode,jdbcType=VARCHAR}
+	    WHERE ARR_NO=#{arrNo,jdbcType=NUMERIC}
+	</update>
+
+	<!-- 제품수량증가 -->
+	<update id="updateProductQtyPlus" parameterType="PrwaProdVO">
+		UPDATE PRODUCT
+		   SET PROD_QTY=PROD_QTY+#{ppQty,jdbcType=NUMERIC}
+		 WHERE PROD_CODE=#{prodCode,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 제품창고수량증가 -->
+	<update id="updateProductWarQtyPlus" parameterType="WarProdVO">
+		UPDATE WAR_PROD
+		   SET WP_QTY=WP_QTY+#{ppQty,jdbcType=NUMERIC}
+		 WHERE PROD_CODE=#{prodCode,jdbcType=VARCHAR}
+		   AND WAR_CODE=(SELECT WAR_CODE
+		 				   FROM WAREHOUSE
+		 				  WHERE WAR_NAME=#{warName,jdbcType=VARCHAR})
+	</update>
+	
+	<!-- 제품수량감소 -->
+		<update id="updateProductQtyMinus" parameterType="PrwaProdVO">
+		UPDATE PRODUCT
+		   SET PROD_QTY=PROD_QTY-#{ppQty,jdbcType=NUMERIC}
+		 WHERE PROD_CODE=#{prodCode,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 제품창고수량감소 -->
+	<update id="updateProductWarQtyMinus" parameterType="WarProdVO">
+		UPDATE WAR_PROD
+		   SET WP_QTY=WP_QTY-#{ppQty,jdbcType=NUMERIC}
+		 WHERE PROD_CODE=#{prodCode,jdbcType=VARCHAR}
+		   AND WAR_CODE=(SELECT WAR_CODE
+		 				   FROM WAREHOUSE
+		 				  WHERE WAR_NAME=#{warName,jdbcType=VARCHAR})
+	</update>
+	
+	<!-- 창고이름가져오기 -->
+	<select id="selectWarNameForProduct" parameterType="String" resultType="String">
+		SELECT A.WAR_NAME AS WAR_NAME
+		  FROM WAREHOUSE A, WAR_PROD B
+		 WHERE A.WAR_CODE=B.WAR_CODE
+		   AND B.PROD_CODE=#{prodCode,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<!-- 생산품입고처리서 삭제 -->
+	<delete id="deleteProductIncoming" parameterType="ProdWareVO">
+		DELETE FROM PRODWARE
+		 WHERE ARR_NUM=#{arrNum,jdbcType=VARCHAR}
+	</delete>
+	
+	<!-- 생산품입고처리서-품목 전체 삭제 -->
+	<delete id="deleteAllProductIncomingRaws" parameterType="String">
+		DELETE FROM PRWA_PROD
+		 WHERE ARR_NUM=#{arrNum,jdbcType=VARCHAR}
+	</delete>
+	
+	<!-- 생산품입고처리서-품목삭제 -->
+	<delete id="deleteProductIncomingRaws" parameterType="PrwaProdVO">
+		DELETE FROM PRWA_PROD
+		 WHERE ARR_NO=#{arrNo,jdbcType=NUMERIC}
+	</delete>
+	
+	<select id="selectIcodeName" parameterType="String" resultType="String">
+		SELECT ICODE_NAME
+ 		  FROM ITEM
+ 		 WHERE RAWS_CODE=#{code}
+	</select>
+	
+	
+	<!-- 지시서 적용 시 생산지시서에 적용여부 변경 -->
+	<update id="updateInstPwAppyn" parameterType="InstrucprodVO">
+		UPDATE INSTRUCPROD
+		   SET PW_APPYN=#{pwAppyn,jdbcType=VARCHAR}
+		 WHERE INST_NUM=#{instNum,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="selectPiApplyList" parameterType="HubSearchVO" resultType="InstrucprodVO">
+		SELECT INST_NUM
+  			   , TO_CHAR(INST_DATE,'YYYY') AS PDC_YY
+               , TO_CHAR(INST_DATE,'MM') AS PDC_MM
+               , TO_CHAR(INST_DATE,'DD') AS PDC_DD
+               , TO_CHAR(INST_DATE,'YYYY/MM/DD') AS INST_DATE
+			   , PROD_CODE
+			   , ICODE_NAME
+			   , PROD_NAME
+			   , GCOMM_NAME
+			   , TO_CHAR(INST_COMPLETE,'YYYY/MM/DD') AS INST_COMPLETE
+			   , INST_LEADQTY
+			   , DEPT_NAME
+			   , EMP_NAME
+			   , KCOMM_NAME
+			   , INST_FINISH
+		 	   , ORB_NUM
+		 FROM INSTRUCPROD
+	    WHERE PW_APPYN='N'
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+           <![CDATA[
+            AND INST_DATE BETWEEN TO_DATE(#{dateStart}, 'YYYY/MM/DD') AND TO_DATE(#{dateEnd}, 'YYYY/MM/DD')+0.99999
+           ]]>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(rawsCode)">
+        	<![CDATA[
+            AND INSTR(PROD_CODE, #{rawsCode}) > 0
+           ]]>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(instNum)">
+        	<![CDATA[
+            AND INSTR(INST_NUM, #{instNum}) > 0
+           ]]>
+        </if>
+	</select>
+	
+	<!-- 	새로운 문서 체크 쿼리 -->
+	<insert id="insertCheck" parameterType="ProdWareVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{arrNum},'N',SYSDATE)
+	</insert>
+	
+	
+</mapper>

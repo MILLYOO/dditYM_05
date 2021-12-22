@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.dao.DocCheckDAO">
+	
+	<select id="selectHistory" resultType="DocCheckVO">
+	SELECT ROWNUM AS ROW_NUM
+	    ,CASE SUBSTR(CHK_NUM,0,2) 
+	    WHEN 'OD' THEN '발주번호:'||CHK_NUM
+	    WHEN 'IC' THEN '입고번호:'||CHK_NUM 
+	    WHEN 'PC' THEN '매입마감번호:'||CHK_NUM 
+	    WHEN 'ID' THEN '생산지시번호:'||CHK_NUM 
+	    WHEN 'ME' THEN '자재출고번호:'||CHK_NUM 
+	    WHEN 'PR' THEN '생산품입고번호:'||CHK_NUM 
+	    WHEN 'ES' THEN '견적번호:'||CHK_NUM 
+	    WHEN 'OR' THEN '수주번호:'||CHK_NUM 
+	    WHEN 'RE' THEN '출고지시번호:'||CHK_NUM 
+	    WHEN 'RA' THEN '출고처리번호:'||CHK_NUM 
+	    WHEN 'SA' THEN '매출마감번호:'||CHK_NUM 
+	    WHEN 'AT' THEN '입출고조정번호:'||CHK_NUM 
+	    WHEN 'SE' THEN '재고이동번호:'||CHK_NUM 
+	    WHEN 'SU' THEN '재고평가번호:'||CHK_NUM 
+	    ELSE '문서번호:'||CHK_NUM END AS CHK_NUM
+	    ,CASE WHEN ROUND((SYSDATE-CHK_DATE)*1000)>=60 
+	        THEN TRUNC(ROUND((SYSDATE-CHK_DATE)*1000)/60)||'시간'||MOD(ROUND((SYSDATE-CHK_DATE)*1000),60)||'분 전'
+	        ELSE ROUND((SYSDATE-CHK_DATE)*1000)||'분 전' END AS CHK_DATE
+	FROM DOC_CHECK
+	WHERE CHK_YN = 'N'
+	</select>
+	
+	<select id="selectDocunit" resultType="DocCheckVO">
+		SELECT SUBSTR(CHK_NUM,1,2) AS CHK_NUM, COUNT(CHK_DATE) AS CHK_UNIT
+		FROM DOC_CHECK
+		WHERE CHK_YN = 'N'
+		GROUP BY CHK_NUM
+	</select>
+	
+	<update id="updateChkYN" parameterType="String">
+		UPDATE DOC_CHECK 
+		SET CHK_YN = 'Y'
+		WHERE CHK_NUM LIKE '${docNum}%'
+	</update>
+</mapper>
+

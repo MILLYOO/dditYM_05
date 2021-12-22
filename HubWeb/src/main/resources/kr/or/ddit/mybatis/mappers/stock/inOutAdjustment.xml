@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.stock.inoutadjustment.dao.InOutAdjustmentDAO">
+	
+	<sql id="orderByPI">
+		ORDER BY ADJ_NUM
+	</sql>
+	
+	<sql id="searchFrag">
+       <trim prefix="WHERE" prefixOverrides="AND">
+          <if test="dateStart neq null">
+             <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(dateStart)">
+                <![CDATA[
+                   ADJ_DATE BETWEEN TO_DATE(#{dateStart}, 'YYYY-MM-DD') 
+                   	AND TO_DATE(#{dateEnd}, 'YYYY-MM-DD')+0.99999
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(adjSort)">
+             	<![CDATA[
+                AND INSTR(ADJ_SORT, #{adjSort}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(deptName)">
+             	<![CDATA[
+                AND INSTR(DEPT_NAME, #{deptName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(empName)">
+             	<![CDATA[
+                AND INSTR(EMP_NAME, #{empName}) > 0
+                ]]>
+             </if>
+             <if test="@org.apache.commons.lang3.ObjectUtils@isNotEmpty(buyerName)">
+             	<![CDATA[
+                AND INSTR(BUYER_NAME, #{buyerName}) > 0
+                ]]>
+             </if>
+          </if>      
+       </trim>
+   </sql>
+
+	<!-- 입출고문서 조회 -->
+	<select id="selectInOutAdjustmentList" parameterType="HubSearchVO" 
+			resultType="AdjustmentVO">
+		SELECT ADJ_NUM
+		       , TO_CHAR(ADJ_DATE,'YYYY') AS STOCK_YY
+		       , TO_CHAR(ADJ_DATE,'MM') AS STOCK_MM
+		       , TO_CHAR(ADJ_DATE,'DD') AS STOCK_DD
+		       , ADJ_SORT
+		       , ADJ_DATE 
+		       , DEPT_NAME 
+		       , EMP_NAME 
+		       , BUYER_NAME 
+		       , ADJ_TYPE
+		FROM ADJUSTMENT A
+		<include refid="searchFrag" />
+		<include refid="orderByPI" />
+	</select>
+	
+<!-- 입출고 품목 상세 조회 -->
+	<select id="selectInOutItemList" parameterType="AdjItemVO" resultType="AdjItemVO">
+	   SELECT ADJ_NO 
+	   		,ADJ_NUM
+		    , CONCAT(RAWS_CODE, PROD_CODE) AS ITEM_CODE
+		    , ICODE_NAME
+		    , RAWS_NAME
+		    , GCOMM_INNAME
+		    , UCOMM_INNAME
+		    , ADJ_MQTY
+		    , GCOMM_OUTNAME
+		    , UCOMM_OUTNAME
+		    , ADJ_QTY
+		    , ADJ_PRICE
+		    , ADJ_COST
+		    , WAR_NAME
+		    , PROJ_NAME
+		    , ADJ_SORT
+		FROM ADJ_ITEM
+		WHERE ADJ_NUM = #{adjNum}
+		ORDER BY ADJ_NO
+	</select>
+	
+<!-- 입출고조정서 1건 조회 -->
+	<select id="selectInOutAdjustment" parameterType="HubSearchVO" resultType="AdjustmentVO">
+		SELECT ADJ_NUM
+		       , TO_CHAR(ADJ_DATE,'YYYY') AS STOCK_YY
+		       , TO_CHAR(ADJ_DATE,'MM') AS STOCK_MM
+		       , TO_CHAR(ADJ_DATE,'DD') AS STOCK_DD
+		       , ADJ_SORT
+		       , ADJ_DATE 
+		       , DEPT_NAME 
+		       , EMP_NAME 
+		       , BUYER_NAME 
+		FROM ADJUSTMENT A
+		WHERE ADJ_NUM = #{adjNum}
+	</select>
+		
+<!-- 입출고조정서 등록 -->	
+	<insert id="insertInOutAdjustmentList" parameterType="AdjustmentVO">
+		<selectKey resultType="String" keyProperty="adjNum" order="BEFORE">
+			 SELECT 'AT'||TO_CHAR(SYSDATE,'YYMMDD')||LPAD(TO_CHAR(NVL(MAX(TO_NUMBER(SUBSTR(ADJ_NUM,9,10))),0) + 1),2,0)
+			  FROM ADJUSTMENT
+			 WHERE SUBSTR(ADJ_NUM,1,8)='AT'||TO_CHAR(SYSDATE,'YYMMDD')
+		</selectKey>
+		INSERT INTO adjustment (
+		    ADJ_NUM,
+		    ADJ_DATE,
+		    ADJ_SORT,
+		    DEPT_NAME,
+		    EMP_NAME,
+		    BUYER_NAME
+		) VALUES (
+		     #{adjNum,jdbcType=VARCHAR}
+			, TO_DATE(#{adjDate,jdbcType=DATE},'YYYY/MM/DD')
+			, #{adjSort,jdbcType=VARCHAR}
+			, #{deptName,jdbcType=VARCHAR}
+			, #{empName,jdbcType=VARCHAR}
+			, #{buyerName,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- 입출고조정서 상세 등록 -->
+	<insert id="insertInOutItem" parameterType="AdjItemVO">
+		<selectKey resultType="int" keyProperty="adjNo" order="BEFORE">
+			SELECT NVL(MAX(ADJ_NO),0) + 1
+			  FROM ADJ_ITEM
+		</selectKey>
+		INSERT INTO ADJ_ITEM (
+		    ADJ_NO,
+		    ADJ_NUM,
+		    RAWS_CODE,
+		    PROD_CODE,
+		    ICODE_NAME,
+		    RAWS_NAME,
+		    GCOMM_INNAME,
+		    UCOMM_INNAME,
+		    ADJ_MQTY,
+		    GCOMM_OUTNAME,
+		    UCOMM_OUTNAME,
+		    ADJ_QTY,
+		    ADJ_PRICE,
+		    ADJ_COST,
+		    WAR_NAME,
+		    PROJ_NAME,
+		    ADJ_SORT
+		) VALUES (
+		      #{adjNo,jdbcType=NUMERIC}
+		    , #{adjNum,jdbcType=VARCHAR}
+		    , #{rawsCode,jdbcType=VARCHAR}
+		    , #{prodCode,jdbcType=VARCHAR}
+		    , #{icodeName,jdbcType=VARCHAR}
+		    , #{rawsName,jdbcType=VARCHAR}
+		    , #{gcommInname,jdbcType=VARCHAR}
+			, #{ucommInname,jdbcType=VARCHAR}
+		    , #{adjMqty,jdbcType=NUMERIC}
+		    , #{gcommOutname,jdbcType=VARCHAR}
+			, #{ucommOutname,jdbcType=VARCHAR}
+		    , #{adjQty,jdbcType=NUMERIC}
+		    , #{adjPrice,jdbcType=NUMERIC}
+		    , #{adjCost,jdbcType=NUMERIC}
+		    , #{warName,jdbcType=VARCHAR}
+		    , #{projName,jdbcType=VARCHAR}
+		    , #{adjSort,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	
+	
+	<!-- 입출고 품목 상세 1건 조회 -->
+	<select id="selectInOutItem" parameterType="AdjItemVO" resultType="AdjItemVO">
+	   SELECT ADJ_NO
+	   		, ADJ_NUM
+		    , CONCAT(RAWS_CODE, PROD_CODE) AS ITEM_CODE
+		    , ICODE_NAME
+		    , RAWS_NAME
+		    , GCOMM_INNAME
+		    , UCOMM_INNAME
+		    , ADJ_MQTY
+		    , GCOMM_OUTNAME
+		    , UCOMM_OUTNAME
+		    , ADJ_QTY
+		    , ADJ_PRICE
+		    , ADJ_COST
+		    , WAR_NAME
+		    , PROJ_NAME
+		FROM ADJ_ITEM
+		WHERE ADJ_NO = #{adjNo}
+	</select>
+	
+	<!-- 입출고조정서 수정 -->
+	<update id="updateInOutAdjustmentList" parameterType="AdjustmentVO">
+		UPDATE ADJUSTMENT
+	   	   SET ADJ_DATE=#{adjDate,jdbcType=DATE}
+			   , ADJ_SORT=#{adjSort,jdbcType=VARCHAR}
+			   , DEPT_NAME=#{deptName,jdbcType=VARCHAR}
+			   , EMP_NAME=#{empName,jdbcType=VARCHAR}
+			   , BUYER_NAME=#{buyerName,jdbcType=VARCHAR}
+	     WHERE ADJ_NUM=#{adjNum}
+	</update>
+	
+	<!-- 입출고조정-품목 수정 -->
+	<update id="updateInOutItem" parameterType="AdjItemVO">
+		UPDATE ADJ_ITEM
+		   SET RAWS_CODE=#{rawsCode,jdbcType=VARCHAR}
+			   , PROD_CODE=#{prodCode,jdbcType=VARCHAR}
+			   , ICODE_NAME=#{icodeName,jdbcType=VARCHAR}
+			   , RAWS_NAME=#{prodName,jdbcType=VARCHAR}
+			   , GCOMM_INNAME=#{gcommInname,jdbcType=VARCHAR}
+			   , UCOMM_INNAME=#{ucommInname,jdbcType=VARCHAR}
+			   , ADJ_MQTY=#{adjMqty,jdbcType=NUMERIC}
+			   , GCOMM_OUTNAME=#{gcommOutname,jdbcType=VARCHAR}
+			   , UCOMM_OUTNAME=#{ucommOutname,jdbcType=VARCHAR}
+			   , ADJ_QTY=#{adjQty,jdbcType=NUMERIC}
+			   , ADJ_PRICE=#{adjPrice,jdbcType=NUMERIC}
+			   , ADJ_COST=#{adjCost,jdbcType=NUMERIC}
+			   , WAR_NAME=#{warName,jdbcType=VARCHAR}
+			   , PROJ_NAME=#{projName,jdbcType=VARCHAR}
+		 WHERE ADJ_NUM=#{adjNum}
+		   AND ADJ_NO=#{adjNo}
+	</update>
+	
+	<!--입출고조정서 삭제 -->
+	<delete id="deleteInOutAdjustmentList" parameterType="AdjustmentVO">
+		DELETE FROM ADJUSTMENT
+		 WHERE ADJ_NUM=#{adjNum}
+	</delete>
+	
+	<!--입출고조정서-품목1건 삭제 -->
+	<delete id="deleteInOutItem" parameterType="AdjItemVO">
+		DELETE FROM ADJ_ITEM
+		 WHERE ADJ_NO=#{adjNo}
+	</delete>
+
+	<!-- 입출고조정서 및 품목 전체 삭제 -->
+	<delete id="deleteAllAdjustment" parameterType="String">
+		DELETE FROM ADJ_ITEM
+		 WHERE ADJ_NUM=#{adjNum}
+	</delete>	 
+	
+	
+<!-- 품목  업데이트 쿼리 -->
+
+	<!-- 제품 테이블 수량 증가(입고) -->
+	<update id="updateProdEnter" parameterType="AdjItemVO">
+		UPDATE PRODUCT
+		SET PROD_QTY = PROD_QTY + #{adjQty}
+		WHERE PROD_CODE = #{itemCode}
+	</update>
+	<!-- 제품-창고  테이블 수량 증가(입고) -->
+	<update id="updateWarProdEnter" parameterType="AdjItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY + #{adjQty}
+		WHERE PROD_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>
+	<!-- 제품 테이블 수량 감소(출고) -->
+	<update id="updateProdOut" parameterType="AdjItemVO">
+		UPDATE PRODUCT
+		SET PROD_QTY = PROD_QTY - #{adjQty}
+		WHERE PROD_CODE = #{itemCode} 
+	</update>
+	<!-- 제품-창고  테이블 수량 감소(출고) -->
+	<update id="updateWarProdOut" parameterType="AdjItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY- #{adjQty}
+		WHERE PROD_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>
+	<!-- 원재료 테이블 수량 증가(입고) -->
+	<update id="updateRawsEnter" parameterType="AdjItemVO">
+		UPDATE RAWS
+		SET RAWS_QTY = RAWS_QTY + #{adjQty}
+		WHERE RAWS_CODE = #{itemCode}
+	</update>
+	<!-- 원재료-창고 테이블 수량 증가(입고) -->
+	<update id="updateWarRawsEnter" parameterType="AdjItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY + #{adjQty}
+		WHERE RAW_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>
+	<!-- 원재료 테이블 수량 감소(출고) -->
+	<update id="updateRawsOut" parameterType="AdjItemVO">
+		UPDATE RAWS
+		SET RAWS_QTY = RAWS_QTY - #{adjQty}
+		WHERE RAWS_CODE = #{itemCode} 
+	</update>
+	<!-- 원재료-창고 테이블 수량 감소(출고) -->
+	<update id="updateWarRawsOut" parameterType="AdjItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY- #{adjQty}
+		WHERE RAW_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>
+	
+	
+<!-- 품목 삭제 업데이트 쿼리 -->
+
+	<!-- 제품 테이블 수량 증가(입고기록이니 다시 감소시키기) -->
+	<update id="deleteProdEnter" parameterType="AdjItemVO">
+		UPDATE PRODUCT
+		SET PROD_QTY = PROD_QTY - #{adjQty}
+		WHERE PROD_CODE = #{itemCode}
+	</update>
+	<!-- 제품-창고  테이블 수량 증가(입고) -->
+	<update id="deleteWarProdEnter" parameterType="AdjItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY - #{adjQty}
+		WHERE PROD_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>
+	<!-- 제품 테이블 수량 감소(출고) -->
+	<update id="deleteProdOut" parameterType="AdjItemVO">
+		UPDATE PRODUCT
+		SET PROD_QTY = PROD_QTY + #{adjQty}
+		WHERE PROD_CODE = #{itemCode} 
+	</update>
+	<!-- 제품-창고  테이블 수량 감소(출고) -->
+	<update id="deleteWarProdOut" parameterType="AdjItemVO">
+		UPDATE WAR_PROD
+		SET WP_QTY = WP_QTY + #{adjQty}
+		WHERE PROD_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>
+	<!-- 원재료 테이블 수량 증가(입고) -->
+	<update id="deleteRawsEnter" parameterType="AdjItemVO">
+		UPDATE RAWS
+		SET RAWS_QTY = RAWS_QTY - #{adjQty}
+		WHERE RAWS_CODE = #{itemCode}
+	</update>
+	<!-- 원재료-창고 테이블 수량 증가(입고) -->
+	<update id="deleteWarRawsEnter" parameterType="AdjItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY - #{adjQty}
+		WHERE RAW_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>
+	<!-- 원재료 테이블 수량 감소(출고) -->
+	<update id="deleteRawsOut" parameterType="AdjItemVO">
+		UPDATE RAWS
+		SET RAWS_QTY = RAWS_QTY + #{adjQty}
+		WHERE RAWS_CODE = #{itemCode} 
+	</update>
+	<!-- 원재료-창고 테이블 수량 감소(출고) -->
+	<update id="deleteWarRawsOut" parameterType="AdjItemVO">
+		UPDATE WAR_RAW
+		SET WR_QTY = WR_QTY + #{adjQty}
+		WHERE RAW_CODE = #{itemCode}
+		AND WAR_CODE = (SELECT WAR_CODE
+		                FROM WAREHOUSE
+		                WHERE WAR_NAME = #{warName})
+	</update>	
+	
+	
+	<insert id="insertCheck" parameterType="AdjustmentVO">
+		INSERT INTO DOC_CHECK
+		VALUES(#{adjNum},'N',SYSDATE)
+	</insert>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

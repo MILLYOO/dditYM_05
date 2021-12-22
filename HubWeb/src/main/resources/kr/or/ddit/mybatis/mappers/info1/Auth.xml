@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.info1.authmanage.dao.AuthManageDAO">
+
+<select id="selectMemList" resultType="MemberVO">
+	SELECT A.EMP_CODE, A.MEM_ID, A.MEM_PASS, B.EMP_NAME, C.DEPT_NAME
+	  FROM MEMBER A, EMPLOYEE B, DEPARTMENT C
+      WHERE A.EMP_CODE = B.EMP_CODE(+)
+        AND B.DEPT_CODE = C.DEPT_CODE
+      
+</select>
+
+<select id="selecMemAuth" parameterType="MemberVO" resultType="MemAuthVO">
+SELECT A.EMP_CODE, B.AUTH_NAME, A.AUTH_USE, A.AUTH_NUM, B.AUTH_KNAME
+  FROM MEM_AUTH A, AUTHORITY B, MEMBER C
+ WHERE A.AUTH_NUM = B.AUTH_NUM(+)
+   AND A.EMP_CODE = C.EMP_CODE(+)
+   AND C.EMP_CODE = #{empCode}
+</select>
+
+<update id="updateMemberAuth" parameterType="MemAuthVO">
+	UPDATE MEM_AUTH 
+   SET AUTH_USE = #{authUse}
+ WHERE AUTH_NUM = #{authNum}
+   AND EMP_CODE =#{empCode}
+</update>
+
+</mapper>

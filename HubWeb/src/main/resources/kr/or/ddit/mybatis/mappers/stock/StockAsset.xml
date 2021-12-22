@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.stock.stockassetpaymentstatus.dao.StockAssetPaymentStatusDAO">
+
+<select id="selectStockAssest" parameterType="HubSearchVO" resultType="StockAssetVO">
+	SELECT STOASS_DATE, PROD_CODE, ENTER_QTY, ENTER_UCOST, ENTER_COST, OUT_QTY, OUT_UCOST, OUT_COST, STO_QTY, STO_UCOST, STO_COST
+	  FROM(
+			SELECT B.STOASS_DATE, B.PROD_CODE, B.ENTER_QTY ,C.실제원가 AS ENTER_UCOST, B.ENTER_QTY*C.실제원가 AS ENTER_COST
+	         , NVL(NULL,0) AS OUT_QTY, NVL(NULL,0) AS OUT_UCOST, NVL(NULL,0) AS OUT_COST
+	         , NVL(NULL,0) AS STO_QTY, NVL(NULL,0) AS STO_UCOST, NVL(NULL,0) AS STO_COST
+	        FROM (
+	            SELECT c1.ARR_DATE AS STOASS_DATE, d.PROD_CODE, NVL(SUM(c.PP_QTY),0) AS ENTER_QTY
+	            FROM PRWA_PROD c, PRODUCT d, PRODWARE c1 
+	            WHERE c.PROD_CODE(+) = d.PROD_CODE
+	            AND c.ARR_NUM = c1.ARR_NUM
+	            <![CDATA[
+		            AND c1.ARR_DATE >= TO_DATE(#{dateStart})
+		            AND c1.ARR_DATE <= TO_DATE(#{dateEnd})
+	            ]]>
+	            GROUP BY d.PROD_CODE, c1.ARR_DATE
+	            ) B, (
+	            SELECT PROD_CODE, NVL(PROD_ACTUCOST,0) AS "실제원가"
+	            FROM PRODUCT    
+	            ) C
+	        WHERE B.PROD_CODE = C.PROD_CODE    
+			UNION ALL
+	        SELECT D.STOASS_DATE,D.PROD_CODE, NVL(NULL,0) AS "ENTER_QTY", NVL(NULL,0) AS ENTER_UCOST, NVL(NULL,0) AS ENTER_COST
+	         , D.OUT_QTY, E.OUT_UCOST, E.OUT_COST
+	         , NVL(NULL,0) AS STO_QTY, NVL(NULL,0) AS STO_UCOST, NVL(NULL,0) AS STO_COST
+	        FROM (
+	            SELECT e1.REL_DATE AS STOASS_DATE, f.PROD_CODE, NVL(SUM(e.RP_QTY),0) AS OUT_QTY
+	            FROM REL_PROD e, PRODUCT f, RELEASE e1
+	            WHERE e.PROD_CODE(+) = f.PROD_CODE
+	            AND e.REL_NUM = e1.REL_NUM
+	            <![CDATA[
+		            AND e1.REL_DATE >= TO_DATE(#{dateStart})
+		            AND e1.REL_DATE <= TO_DATE(#{dateEnd})
+		        ]]>    
+	            GROUP BY f.PROD_CODE, e1.REL_DATE
+	            ) D, (
+	            SELECT f1.PROD_CODE, e1.RP_SUMCOST AS OUT_UCOST, NVL(SUM(e1.RP_SUMCOST),0) AS OUT_COST
+	            FROM REL_PROD e1, PRODUCT f1
+	            WHERE e1.PROD_CODE(+) = f1.PROD_CODE
+	            GROUP BY f1.PROD_CODE, e1.RP_SUMCOST
+	            )E
+	         WHERE D.PROD_CODE = E.PROD_CODE
+	    )
+	WHERE PROD_CODE = (SELECT PROD_CODE
+	                    FROM PRODUCT
+	                    WHERE PROD_NAME=#{prodName}
+	                  )    
+	ORDER BY STOASS_DATE
+</select>
+</mapper>

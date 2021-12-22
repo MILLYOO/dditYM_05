@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+<tiles-definitions>
+<!-- definition name == logical view name -->
+  <definition name="super" template="/WEB-INF/views/template.jsp"><!-- abstarct defination -->
+  	<put-attribute name="preScript" value="/includee/preScript.jsp"></put-attribute>
+  	<put-attribute name="header" value="/includee/headerMenu.jsp"></put-attribute>
+  	<put-attribute name="left" value="/includee/leftMenu.jsp"></put-attribute>
+  	<put-attribute name="footer" value="/includee/footer.jsp"></put-attribute>
+  	<put-attribute name="postScript" value="/includee/postScript.jsp"></put-attribute>
+  </definition>
+  
+  <definition name="index" extends="super">
+  	<put-attribute name="content" value="/WEB-INF/views/index.jsp"></put-attribute>
+  </definition>
+  
+  <definition name="prod/*" extends="super" preparer="prodViewPreparer"> <!-- preparer 상품에 관한 정보만 preparer를 탄다. -->
+  	<put-attribute name="content" value="/WEB-INF/views/prod/{1}.jsp"></put-attribute>
+  </definition>
+  
+  <definition name="member/*" extends="super"> <!-- preparer 상품에 관한 정보만 preparer를 탄다. -->
+  	<put-attribute name="content" value="/WEB-INF/views/member/{1}.jsp"></put-attribute>
+  </definition>
+  
+  <definition name="board/*" extends="super"> <!-- preparer 상품에 관한 정보만 preparer를 탄다. -->
+  	<put-attribute name="content" value="/WEB-INF/views/board/{1}.jsp"></put-attribute>
+  </definition>
+  
+</tiles-definitions>

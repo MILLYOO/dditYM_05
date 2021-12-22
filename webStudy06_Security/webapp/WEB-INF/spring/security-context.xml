@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-4.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+		<!-- 이 빈은 직접 생산하는 것이 아닌 팩토리메서드 패턴을 이용해서 만든다. -->
+	<beans:bean id="passwordEncoder" class="org.springframework.security.crypto.factory.PasswordEncoderFactories" 
+		factory-method="createDelegatingPasswordEncoder"
+	/>
+
+	<!-- db기반 인증을 사용하기 위한 빈 -->
+	<!-- p:hideUserNotFoundExceptions : 최초 발생 예외 지우기 설정 -->
+	<!-- 인증을 담당함.  -->
+	<beans:bean id="daoAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider"
+		p:userDetailsService-ref="userDetailService"
+		p:passwordEncoder-ref="passwordEncoder"
+		p:hideUserNotFoundExceptions="false"
+	/>
+	
+	<authentication-manager>
+		<authentication-provider ref="daoAuthenticationProvider" />
+	</authentication-manager>
+	
+	
+	<!-- 필터는 web.xml에서 등록하여 톰캣이 관리한다. -->
+	<!-- 필터가 스프링 안으로 들어와 있는 것 -->
+	<!-- form-login : 로그인 화면을 우리가 만들어둔 폼으로 동작하기 위한 설정-->
+	<!-- default-target-url : 로그인 성공시 이동 할 페이지 -->
+	<!-- always-use-default-target : 이전에 이동할려고 했던 곳으로 이동 false로 주면 됨 --> 
+	<!-- http를 사용하면 필터체인이 등록된다. -->
+	<http auto-config="true">
+		<form-login 
+			login-page="/login/loginForm.jsp"
+			login-processing-url="/login/loginProcess.do" 
+			username-parameter="memId"
+			password-parameter="memPass"
+			default-target-url="/"
+			always-use-default-target="false"
+		/>
+		<!-- logout-url : 로그아웃 버튼 눌를시 이동하는 action값을 줌 -->
+		<!-- invalidate-session : 세션 만료 여부 -->
+		<!-- logout-success-url : 로그아웃 하면 웰컴페이지로 -->
+		<logout
+			logout-url="/login/logout.do"
+			invalidate-session="true"
+			logout-success-url="/"
+		/>
+		<!-- sorting 구조로 위에서부터 밑으로 내려온다 -->
+		<!-- 선택적 랜더링 -->
+		<intercept-url pattern="/mypage.do" access="isAuthenticated()"/>
+		<intercept-url pattern="/member/memberInsert.do" access="isAnonymous()"/>
+		<intercept-url pattern="/member/memberUpdate.do" access="isAuthenticated()"/>
+		<intercept-url pattern="/member/memberDelete.do" access="isAuthenticated()"/>
+		<intercept-url pattern="/member/**" access="hasRole('ROLE_ADMIN')"/>
+		<intercept-url pattern="/prod/prodInsert.do" access="hasRole('ROLE_ADMIN')"/>
+		<intercept-url pattern="/prod/prodUpdate.do" access="hasRole('ROLE_ADMIN')"/>
+		<intercept-url pattern="/**" access="permitAll"/>
+		<csrf disabled="true"/> <!-- 이걸 사용하면 csrf토큰 체크를 안함. 원래는 해야함. -->
+	</http>
+
+</beans:beans>

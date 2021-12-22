@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean class="kr.or.ddit.task.spring.PrintNumberJob"/>
+	
+	<task:scheduler id="scheudler" pool-size="3"/>
+	
+	<!-- 직접적으로 스레드 쿨링 / pool-size : 초기에 몇개의 스레드를 생성할지 설정 -->
+	<!-- keep-alive : 비활동 상태에서 스레드를 최대 몇초까지 살려둘건지 설정 -->
+	<!-- queue-capacity : 선입선출구조, 쿨링정책 -->
+	<task:executor id="excutor" pool-size="5" keep-alive="10" queue-capacity="5" />
+	
+	<task:annotation-driven executor="excutor" scheduler="scheudler"/>
+
+</beans>

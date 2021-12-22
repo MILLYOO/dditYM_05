@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.dao.BoardDAO">
+
+	<sql id="searchFrag"> <!-- 코드조각을 만들기 위해 사용된다 flagment -->
+		<where>
+			<!-- if문이 만족되면 자동으로 where절이 만들어진다. -->
+			<if test="searchVO neq null and @org.apache.commons.lang3.StringUtils@isNotBlank(searchVO.searchWord)"> <!-- OGNL -->
+				<choose><!-- case when then -->
+					<when test="searchVO.searchType eq 'title'">
+						INSTR(BO_TITLE, #{searchVO.searchWord}) > 0
+					</when>
+					<when test="searchVO.searchType eq 'writer'">
+						BO_WRITER LIKE '%'||#{searchVO.searchWord}||'%'
+					</when>
+					<otherwise><!-- default -->
+						INSTR(BO_TITLE, #{searchVO.searchWord}) > 0
+						or
+						BO_WRITER LIKE '%'||#{searchVO.searchWord}||'%'
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</sql>
+	
+	<select id = "selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+		FROM FREEBOARD
+		<include refid="searchFrag"/>
+	</select>
+	
+	<select id="selectBoardList" resultType="BoardVO" parameterType="PagingVO">
+	 SELECT B.*
+ FROM(
+    SELECT A.*, ROWNUM RNUM 
+    FROM(
+    <![CDATA[
+      SELECT BO_NO, 
+      LPAD('   RE:', (LEVEL-1)*6, '&nbsp;') || BO_TITLE BO_TITLE,
+      ]]> 
+      BO_WRITER, BO_DATE, BO_HIT, 
+      (SELECT COUNT(*) FROM FREEREPLY D WHERE C.BO_NO = D.BO_NO) REP_COUNT,
+      (SELECT COUNT(*) FROM ATTATCH E WHERE C.BO_NO = E.BO_NO) ATT_COUNT
+      FROM FREEBOARD C
+      <include refid="searchFrag"/>
+      START WITH BO_PARENT IS NULL
+      CONNECT BY PRIOR BO_NO = BO_PARENT
+      ORDER SIBLINGS BY BO_NO DESC
+    )A
+  )B
+   WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+	</select>
+	<resultMap type="BoardVO" id="boardMap" autoMapping="true">
+		<id property="boNo" column="NO"/>
+		<collection property="attatchList" ofType="AttatchVO" autoMapping="true"/>
+	</resultMap>
+	
+	<select id="selectBoard" resultMap="boardMap" parameterType="int">
+	SELECT
+	A.BO_NO AS NO, BO_TITLE, BO_WRITER,
+	BO_IP, BO_MAIL, BO_PASS,
+	BO_CONTENT, 
+	TO_CHAR(BO_DATE, 'YYYY-MM-DD') BO_DATE,
+	BO_REP,	BO_HIT, BO_REC,
+	ATT_NO, ATT_FILENAME, ATT_DOWNLOAD, ATT_SAVENAME, ATT_FANCYSIZE
+	FROM FREEBOARD A LEFT OUTER JOIN ATTATCH B ON(A.BO_NO = B.BO_NO)
+	WHERE A.BO_NO = #{boNo}
+	</select>
+	
+	<update id="incrementCount" parameterType="map">
+		UPDATE FREEBOARD
+		SET
+		${incType} = ${incType} + 1 <!-- # = 'BO_HIT' $ = BO_HIT replaceText -->
+		WHERE BO_NO = #{boNo}
+	</update>
+	
+	<insert id="insertBoard" parameterType="BoardVO">
+		<selectKey keyProperty="boNo" resultType="int" order="BEFORE">
+			SELECT FREEBOARD_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO FREEBOARD (
+		    BO_NO,    BO_TITLE,
+		    BO_WRITER,    BO_IP,
+		    BO_MAIL,    BO_PASS,
+		    BO_CONTENT
+		    <if test="boParent neq null and boParent gt 0">
+			    ,  BO_PARENT
+		    </if>
+		) VALUES (
+			#{boNo,jdbcType=NUMERIC},
+			#{boTitle,jdbcType=VARCHAR},
+			#{boWriter,jdbcType=VARCHAR},
+			#{boIp,jdbcType=VARCHAR},
+			#{boMail,jdbcType=VARCHAR},
+			#{boPass,jdbcType=VARCHAR},
+			#{boContent,jdbcType=CLOB}
+			<if test="boParent neq null and boParent gt 0">
+				,#{boParent,jdbcType=NUMERIC}
+		    </if>
+		)
+	</insert>
+	<delete id="deleteBoard" parameterType="int">
+		MERGE INTO FREEBOARD F
+		USING (
+			SELECT BO_NO, BO_PARENT
+		    , (SELECT COUNT(*) FROM FREEBOARD B WHERE A.BO_NO = B.BO_PARENT) CHLIDCNT
+		FROM FREEBOARD A
+		) C
+		ON (F.BO_NO = #{boNo} AND F.BO_NO = C.BO_NO)
+		WHEN MATCHED THEN
+		UPDATE
+		SET
+		BO_TITLE = '해당 글은 투명취급해주셈',
+		BO_CONTENT = NULL
+		DELETE
+		WHERE C.CHLIDCNT = 0
+	</delete>
+	<update id="updateBoard" parameterType="BoardVO">
+		UPDATE FREEBOARD
+		SET
+		    BO_TITLE = #{boTitle,jdbcType=VARCHAR},
+		    BO_IP = #{boIp,jdbcType=VARCHAR},
+		    BO_MAIL = #{boMail,jdbcType=VARCHAR},    
+		    BO_CONTENT = #{boContent,jdbcType=CLOB}
+		WHERE
+			BO_NO = #{boNo}
+	</update>
+</mapper>

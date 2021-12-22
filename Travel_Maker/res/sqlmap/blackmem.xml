@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="black">
+
+<!-- 전체 조회 -->
+<select id="getAllBlackMember" parameterClass="pagingVO" resultClass="blackVO">
+  select AA.*
+	from
+		(select rowNum rn 
+		        ,A.*
+		   from  
+			  (select B.TM_ID
+			  		 ,B.TM_BL_RS
+			  		 ,to_char(B.TM_BL_DATE, 'yyyy-mm-dd') as TM_BL_DATE
+			  		 ,B.TM_BL_ADMN
+			  	from tm_blacklist B, TM_MEMBER C
+			   WHERE B.TM_ID = C.TM_ID
+			     AND C.TM_AUTHOR = 2
+			     ORDER BY TM_BL_DATE DESC) A) AA
+    where AA.rn BETWEEN #firstRecNo# and #lastRecNo#
+</select>
+
+<!-- 전체 블랙멤버 수 -->
+<select id="countBlackMember" resultClass="int">
+	select count(*) cnt 
+      FROM tm_blacklist
+</select>
+
+<!-- 중복체크 -->
+<select id="checkBlackMember" parameterClass="String" resultClass="int">
+	select count(*) cnt
+	  from tm_blacklist
+	 where tm_id = #tm_id#
+</select>
+
+<!-- 신규 블랙리스트 등록 -->
+<insert id="insertBlackMember" parameterClass="blackVO">
+	insert into tm_blacklist
+	(tm_id, tm_bl_rs, tm_bl_date, tm_bl_admn) 
+	VALUES (#tm_id#, #tm_bl_rs#, sysdate, #tm_bl_admn#)
+</insert>
+
+<!-- 차단기록 있는 블랙리스트 등록 -->
+<update id="insertAgainBlack" parameterClass="blackVO">
+	update tm_blacklist
+       set tm_bl_rs = #tm_bl_rs#,
+           tm_bl_date = sysdate,
+           tm_bl_admn = #tm_bl_admn#
+     where tm_id = #tm_id#;
+</update>
+
+<!-- 블랙리스트 전환 -->
+<update id="memToBlack" parameterClass="memVO">
+	update TM_MEMBER
+	   set tm_author = 2
+	 where tm_id = #tm_id#
+</update>
+
+<!-- 일반회원 전환 -->
+<update id="blackToMem" parameterClass="memVO">
+	update TM_MEMBER
+	   set tm_author = 1
+	 where tm_id = #tm_id#
+</update>
+
+</sqlMap>

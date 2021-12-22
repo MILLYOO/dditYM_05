@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="img">
+
+<!--
+<resultMap class="kr.or.ddit.comm.vo.AtchFileVO" id="atchFileDetailMap">
+	<result property="atchFileId" column="ATCH_FILE_ID"/>
+	<result property="fileSn" column="FILE_SN"/>
+	<result property="fileStreCours" column="FILE_STRE_COURS"/>
+	<result property="streFileNm" column="STRE_FILE_NM"/>
+	<result property="orignlFileNm" column="ORIGNL_FILE_NM"/>
+	<result property="fileExtsn" column="FILE_EXTSN"/>
+	<result property="fileCn" column="FILE_CN"/>
+	<result property="fileSize" column="FILE_SIZE"/>
+</resultMap>
+  -->
+
+<select id="getAtchFileList" parameterClass="imgVO">
+      select * 
+      from  TM_IMG_DETAIL 
+      where TM_BIMGD_ID = #tm_bimg_id#
+</select>
+
+
+<select id="getAtchFileDetail" parameterClass="imgVO">
+      select * 
+        from  TM_IMG_DETAIL
+       where TM_BIMGD_ID=#tm_bimg_id#      
+      and TM_BIMGD_FILESN=#tm_bimgd_filesn#
+</select>
+
+
+<!-- 시퀀스로 증가하는 atchFileId nextval 안 쓰고 keyProperty를 먼저 구해서 setter로 vo에 저장한 뒤, getter로 구해오는 것-->
+<insert id="insertAtchFile" parameterClass="imgVO">
+	<selectKey keyProperty="tm_bimg_id" resultClass="String">
+			select nvl(max(to_number(TM_BIMG_ID)),0) + 1 
+	          from IMG
+	</selectKey>
+	 insert into IMG
+	(
+		TM_BIMG_ID,
+		TM_BIMG_DATE,
+		TM_BIMG_USE
+	)
+	values
+	(
+		#tm_bimg_id#,
+		sysdate,
+		'Y'
+	)
+	
+</insert>
+
+<insert id="insertAtchFileDetail" parameterClass="imgVO">
+	INSERT INTO TM_IMG_DETAIL (
+            TM_BIMGD_FILESN,
+		    TM_BIMGD_ID,
+		    TM_BIMGD_COURSE,
+		    TM_BIMGD_SNAME,
+		    TM_BIMGD_ONAME,
+		    TM_BIMGD_EXTSN,
+		    TM_BIMGD_CN,
+		    TM_BIMGD_SIZE
+		) VALUES 
+		(
+		    (select nvl(max(TM_BIMGD_FILESN), 0) + 1
+			   from TM_IMG_DETAIL
+			  where TM_BIMGD_ID = #tm_bimg_id#),
+			#tm_bimg_id#,
+			#tm_bimgd_course#,
+			#tm_bimgd_sname#,
+			#tm_bimgd_oname#,
+			#tm_bimgd_extsn#,
+			#tm_bimgd_cn#,
+			#tm_bimgd_size#
+		)
+</insert>
+
+</sqlMap>
+
+
+
+
+

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="userqna">
+
+<!-- 전체 조회 -->
+<select id="selectAll" parameterClass="pagingVO" resultClass="boardVO">
+	select AA.*
+	  from
+		  (select rowNum rn ,A.*
+		     from  
+			  (SELECT tm_b_no, tm_id, tm_b_title,
+        	   		  to_char(tm_b_date, 'YYYY-MM-DD') AS tm_b_date, tm_b_hit, to_char(TM_B_MODATE, 'YYYY-MM-DD') AS TM_B_MODATE
+                 FROM tm_board
+                WHERE tm_category_id = 110
+             ORDER BY TM_B_NO DESC) A) AA
+     where AA.rn BETWEEN #firstRecNo# and #lastRecNo#
+</select>
+
+<!-- 전체 게시물 수 -->
+<select id="countTotalCount" resultClass="int">
+	SELECT COUNT(*)
+  	  FROM TM_BOARD
+     WHERE TM_CATEGORY_ID = 110
+</select>
+
+<!-- 개별 조회 -->
+<select id="selctBoard" parameterClass="int" resultClass="boardVO">
+SELECT TM_B_NO, TM_ID, TM_B_TITLE, TM_B_CONTENT,
+       to_char(tm_b_date, 'yyyy-mm-dd') as tm_b_date,
+       TM_B_HIT, TM_BIMG_ID,
+       to_char(TM_B_MODATE, 'yyyy-mm-dd') as tm_b_modate
+  FROM tm_board
+ WHERE tm_category_id = 110
+   AND TM_B_NO = #tm_b_no#
+</select>
+
+<!-- 조회수 증가 -->
+<update id="updateHit" parameterClass="int">
+UPDATE TM_BOARD
+   SET TM_B_HIT = TM_B_HIT + 1
+ WHERE TM_CATEGORY_ID = 110
+   AND TM_B_NO = #tm_b_no#
+</update>
+
+<!-- 글 작성 -->
+<insert id="insertBoard" parameterClass="boardVO">
+INSERT INTO tm_board
+   (TM_B_NO, tm_category_id, tm_id, tm_b_title, tm_b_content, 
+    tm_b_ox, tm_b_date, tm_b_hit, tm_bimg_id)
+VALUES
+   ((select NVL(max(TM_B_NO),0)+1
+       from tm_board
+      where TM_CATEGORY_ID = 110)
+      , 110, #tm_id#, #tm_b_title#, #tm_b_content#,
+     0, SYSDATE, 0, #tm_bimg_id#)
+</insert>
+
+<!-- 글쓴이 확인 -->
+<select id="checkBoardWriter" parameterClass="int" resultClass="String">
+SELECT TM_ID
+  FROM TM_BOARD
+ WHERE TM_B_NO = #tm_b_no#
+   AND TM_CATEGORY_ID = 110
+</select>
+
+<!-- 댓쓴이 확인 -->
+<select id="checkReWriter" parameterClass="int"  resultClass="String">
+SELECT TM_ID
+  FROM TM_B_COMMENT
+ WHERE TM_BC_NO = #tm_bc_no#
+</select>
+
+<!-- 비회원/블랙리스트 확인 -->
+<select id="checkNotUser" parameterClass="String"  resultClass="int">
+SELECT TM_AUTHOR
+  FROM TM_MEMBER
+ WHERE TM_ID = #tm_id#
+</select>
+
+<!-- 글 수정 -->
+<update id="updateBoard" parameterClass="boardVO">
+UPDATE TM_BOARD 
+   SET TM_B_TITLE = #tm_b_title#,
+       TM_B_CONTENT = #tm_b_content#,
+       TM_B_MODATE = SYSDATE,
+       TM_BIMG_ID = #tm_bimg_id#
+ WHERE TM_CATEGORY_ID = 110
+   AND TM_B_NO = #tm_b_no#
+</update>
+
+<!-- 글 삭제 -->
+<delete id="deleteBoard" parameterClass="boardVO">
+DELETE FROM TM_BOARD
+      WHERE TM_CATEGORY_ID = 110
+        AND TM_B_NO = #tm_b_no#
+</delete>
+
+<!-- 글 검색 -->
+<select id="searchBoard" parameterClass="boardVO" resultClass="boardVO">
+  SELECT tm_b_no, tm_id, tm_b_title,
+	     tm_b_date, tm_b_hit, TM_B_MODATE
+    FROM tm_board
+   WHERE tm_category_id = 110
+   <isNotEmpty property="tm_b_title">
+   		and tm_b_title = #tm_b_title#
+   </isNotEmpty>
+   <isNotEmpty property="tm_id">
+   		and tm_id = #tm_id#
+   </isNotEmpty>
+   <isNotEmpty property="tm_b_content">
+   		and tm_b_content = #tm_b_content#
+   </isNotEmpty>
+ORDER BY TM_B_NO DESC 
+</select>
+
+<!-- 댓글 조회 -->
+<select id="replyList" parameterClass="int" resultClass="replyVO">
+  SELECT TM_BC_NO, TM_ID, TM_BC_CONTENT,
+         to_char(TM_BC_DATE, 'yyyy-mm-dd') as tm_bc_date,
+         to_char(TM_BC_MODATE, 'yyyy-mm-dd') as tm_bc_modate
+    FROM TM_B_COMMENT
+   WHERE TM_B_NO = #tm_b_no#
+   	 AND TM_CATEGORY_ID = 110
+ORDER BY TM_BC_NO DESC 
+</select>
+
+<!-- 댓글  작성-->
+<insert id="insertReply" parameterClass="replyVO">
+INSERT INTO TM_B_COMMENT
+          (TM_BC_NO, TM_ID, TM_B_NO, TM_CATEGORY_ID, 
+           TM_BC_CONTENT, TM_BC_DATE, TM_BC_MODATE)
+    VALUES((select NVL(max(TM_BC_NO),0)+1
+              from TM_B_COMMENT)
+          , #tm_id#, #tm_b_no#, 110
+          , #tm_bc_content#, SYSDATE, null)
+</insert>
+
+<!-- 댓글 수정 -->
+<update id="updateReply" parameterClass="replyVO">
+UPDATE TM_B_COMMENT
+   SET TM_BC_CONTENT = #tm_bc_content#,
+       TM_BC_MODATE = SYSDATE
+ WHERE TM_BC_NO = #tm_bc_no#
+   AND TM_CATEGORY_ID = 110
+</update>
+
+<!-- 댓글 개별 삭제 -->
+<delete id="deleteReply" parameterClass="int">
+DELETE FROM TM_B_COMMENT
+      WHERE TM_BC_NO = #tm_bc_no#
+        AND TM_CATEGORY_ID = 110   
+</delete>
+
+<!-- 댓글 전체 삭제 -->
+<delete id="deleteReplyAll" parameterClass="int">
+DELETE FROM TM_B_COMMENT
+      WHERE TM_B_NO = #tm_b_no#
+        AND TM_CATEGORY_ID = 110
+</delete>
+
+</sqlMap>

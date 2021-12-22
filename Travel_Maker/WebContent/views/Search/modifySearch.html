@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>닫기가 가능한 커스텀 오버레이</title>
+
+
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css"> <!-- font.css -->
+	 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e08d921eaf92b6587ac46f3f1255b6a3&libraries=services"></script>
+	 <script src="../../js/modifySearch.js"></script>
+	 
+	 <link rel="stylesheet" type="text/css" href="../../page/css/default.css">
+<link rel="stylesheet" type="text/css" href="../../page/css/style2.css">
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#header").load("../MainHeader.jsp")
+		$("#footers").load("../footer.html")
+	});
+</script>
+    <style>
+
+    /* map 전용 style, marker 전용 style*/
+    .wrap {position: absolute;left: 0;bottom: 40px;width: 288px;height: 132px;margin-left: -144px;text-align: left;overflow: hidden;font-size: 12px;font-family: 'Malgun Gothic', dotum, '돋움', sans-serif;line-height: 1.5;}
+    .wrap * {padding: 0;margin: 0;}
+    .wrap .info {width: 286px;height: 120px;border-radius: 5px;border-bottom: 2px solid #ccc;border-right: 1px solid #ccc;overflow: hidden;background: #fff;}
+    .wrap .info:nth-child(1) {border: 0;box-shadow: 0px 1px 2px #888;}
+    .info .title {padding: 5px 0 0 10px;height: 30px;background: #eee;border-bottom: 1px solid #ddd;font-size: 18px;font-weight: bold;}
+    .info .close {position: absolute;top: 10px;right: 10px;color: #888;width: 17px;height: 17px;background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/overlay_close.png');}
+    .info .close:hover {cursor: pointer;}
+    .info .body {position: relative;overflow: hidden;}
+    .info .desc {position: relative;margin: 13px 0 0 90px;height: 75px;}
+    .desc .ellipsis {overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}
+    .desc .jibun {font-size: 11px;color: #888;margin-top: -2px;}
+    .info .img {position: absolute;top: 6px;left: 5px;width: 73px;height: 71px;border: 1px solid #ddd;color: #888;overflow: hidden;}
+    .info:after {content: '';position: absolute;margin-left: -12px;left: 50%;bottom: 0;width: 22px;height: 12px;background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')}
+    .info .link {color: #5085BB;}
+    
+    /* map 컨트롤 전용 style */
+    html, body {width:100%;height:100%;margin:0;padding:0; }
+	.map_wrap {position:relative;overflow:hidden;width:100%;height:480px;}
+	.custom_typecontrol {
+			position:absolute;
+			top:10px;
+			right:10px;
+			overflow:hidden;
+			width:350px;
+			height:60px;
+			margin:0;
+			padding:0;
+			z-index:1;
+			font-size:12px;
+			}
+    #wrapper{
+	width: 1200px;
+	margin: 0 auto;	
+}
+    /* 버튼전용 style */
+    body{
+		  margin: 0;
+		  padding: 0;
+		  background-color: #fff;
+		}
+	.search-box{
+		  padding: 10px;
+		  position: absolute;
+		  top: 50%;
+		  left: 50%;
+		  transform: translate(-50%,-50%);
+		  height: 30px;
+		  background-color: #fff;
+		  border: 1px solid #51e3d4;
+		  border-radius: 30px;
+		  transition: 0.4s;
+		  width:30px;
+		}
+	.search-box:hover{
+		  box-shadow: 0px 0px .5px 1px #51e3d4;
+		  width: 182px;
+		}
+	.search-btn{
+		  text-decoration: none;
+		  float: right;
+		  width: 30px;
+		  height: 30px;
+		  background-color: #fff;
+		  border-radius: 50%;
+		  display: flex;
+		  justify-content: center;
+		  align-items: center;
+		  color: #51e3d4;
+		}
+	.search-box:hover > .search-btn{
+		  background-color: #fff;
+		}
+	.search-txt{
+		  display: flex;
+		  padding: 0;
+		  width: 0px;
+		  border:none;
+		  background: none;
+		  outline: none;
+		  float: left;
+		  font-size: 1rem;
+		  line-height: 30px;
+		  transition: .4s;
+		}
+	.search-box:hover > .search-txt{
+		  width: 140px;
+		  padding: 0 6px;
+		}
+	form, #wrapper{
+		margin: 18px auto;
+	}	   
+textarea, .ww {
+	border : 1px solid lightgray;
+	border-radius: 10px;
+}
+	 
+    /* 정보를 담는 폼 스타일*/
+    .TM_ML{
+	display : inline-block;
+	width: 100px;
+	}
+	
+	.btn-primary {
+    color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4;
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    -ms-touch-action: manipulation;
+    touch-action: manipulation;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.42857143;
+    border-radius: 4px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    }
+</style>
+<!-- <script type="text/javascript">
+$(document).ready(function() {
+	$("#header").load("../MainHeader.jsp")
+	$("#footers").load("../footer.html")
+});
+
+</script> -->
+</head>
+<body>
+<div id="header"></div>
+<div id="wrapper">
+	<div class="map_wrap">
+		<div id="map" style="width: 100%; height: 100%; position:relative; overflow:hidden;"></div>
+		<div class="custom_typecontrol">
+	       <div class="search-box">
+	      		<input type="text" class="search-txt" id="search" placeholder="키워드">
+	      		<a class="search-btn" id = "search-btn" href = "">
+	       		 <i class="fas fa-search"></i>
+	      		</a>
+	      		</div>
+	    	</div>
+	</div>
+	<div>
+    <!-- 위도 및 경도 좌표 및 위치정보 -->
+   	<form id = "tm_ml_form">
+    <label class = "TM_ML">번호</label><input class="ww" type="text" id="pid" name="tm_search_id" style="width:50%;" value="" readonly ><br>
+    <label class = "TM_ML">장소명</label><input class="ww" type="text" id="pname" name="tm_search_name" style="width:50%;" value="" ><br>
+    <label class = "TM_ML">주소</label><input class="ww" type="text" id="paddress" name="tm_search_addr" style="width:50%;" value=""><br>
+    <label class = "TM_ML">위도</label><input class="ww" type="text" id="latclick" name="tm_search_y"  style="width:50%;" value=""><br>	
+    <label class = "TM_ML">경도</label><input class="ww" type="text" id="lngclick" name="tm_search_x" style="width:50%;" value=""><br>
+    <label class = "TM_ML">전화번호</label><input class="ww" type="text" id="ptel" name="tm_search_tel" style="width:50%;" value=""><br>
+    <label class = "TM_ML">카테고리</label><input type='radio' id="pcate1" name='tm_search_cate'  value='1' />맛집
+										 <input type='radio' id="pcate2" name='tm_search_cate' value='0' />여행지
+    <br><br>
+   	<label class = "TM_ML">설명</label><br><textarea rows="7" id="pcon" cols="120" name = "tm_search_con"></textarea><br><br>
+   	<div class="write">
+   	<input type = "button"  id = "update" value = "수정" class="btn-primary">
+   	</div>
+   	</form>
+    </div>
+</div>
+<div id="footers"></div>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="likehate">
+
+		<!-- int tm_category_id, int tm_b_no, String tm_id -->
+					
+		<!-- 좋아요 추가 -->
+	<update id="addLike" parameterClass="LikeHateVO">
+	insert into TM_BOARD_LIKE(
+		TM_LH_NO, 
+		TM_ID, 
+		TM_B_NO, 
+		TM_CATEGORY_ID, 
+		TM_LH_LIKE, 
+		TM_LH_HATE
+	)
+	
+	values(
+		(select NVL(max(TM_LH_NO),0)+1 from TM_BOARD_LIKE),
+		#tm_id#,
+		#tm_b_no#,
+		#tm_category_id#,
+		1,
+		0
+	)
+	</update>
+	
+	
+	
+		<!-- 좋아요 취소 -->
+	<update id="cancelLike" parameterClass="LikeHateVO">
+	delete TM_BOARD_LIKE where TM_ID =  #tm_id# and TM_B_NO = #tm_b_no# 
+	</update>
+	
+	
+	
+	
+	
+		<!-- 싫어요 추가 -->
+	<update id="addHate" parameterClass="LikeHateVO">
+		insert into TM_BOARD_LIKE(
+		TM_LH_NO, 
+		TM_ID, 
+		TM_B_NO, 
+		TM_CATEGORY_ID, 
+		TM_LH_LIKE, 
+		TM_LH_HATE
+	)
+	
+	values(
+		(select NVL(max(TM_LH_NO),0)+1 from TM_BOARD_LIKE),
+		#tm_id#,
+		#tm_b_no#,
+		#tm_category_id#,
+		0,
+		1
+	)
+	</update>
+	
+	
+	
+	
+	
+		<!-- 싫어요 취소 -->
+	<update id="cancelHate" parameterClass="LikeHateVO">
+	delete TM_BOARD_LIKE where TM_ID =  #tm_id# and TM_B_NO = #tm_b_no#
+	</update>
+	
+	
+	
+	
+		<!-- 좋아요 개수 조회 -->
+	<select id="getLikeCount" parameterClass="LikeHateVO" resultClass="int">
+	select count(*) from TM_BOARD_LIKE where TM_B_NO = #tm_b_no# and TM_LH_LIKE = 1
+	</select>
+	
+		<!-- 싫어요 개수 조회 -->
+	<select id="getHateCount" parameterClass="LikeHateVO" resultClass="int">
+	select count(*) from TM_BOARD_LIKE where TM_B_NO = #tm_b_no# and TM_LH_HATE = 1
+	</select>
+	
+	
+	
+	
+	
+	
+		<!-- 좋아요 여부 조회 -->
+	<select id="chkLike" parameterClass="LikeHateVO" resultClass="int">
+	select count(*) from TM_BOARD_LIKE where TM_B_NO = #tm_b_no# and TM_ID = #tm_id# and TM_LH_LIKE = 1
+	</select>
+	
+	
+		<!-- 싫어요 여부 조회 -->
+	<select id="chkHate" parameterClass="LikeHateVO" resultClass="int">
+	select count(*) from TM_BOARD_LIKE where TM_B_NO = #tm_b_no# and TM_ID = #tm_id# and TM_LH_HATE = 1
+	</select>
+	
+	
+	
+</sqlMap>

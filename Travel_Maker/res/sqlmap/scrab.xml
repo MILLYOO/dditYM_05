@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+   			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" 
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+			
+<!-- namespace 수정!!! -->
+<sqlMap namespace="scrab">
+
+
+<!-- 내 스크랩 조회 -->
+<select id="selectMyScrab" parameterClass="myscrabVO" resultClass="myscrabVO">
+	select AAA. *, B. *
+      from TM_SEARCH B,
+            (select AA.*
+              from (select rowNum rn ,A.*
+                     from  
+                      (SELECT TM_SCRAB_ID, TM_SEARCH_ID
+                         FROM TM_SCRAB
+                        WHERE TM_ID = #tm_id#
+                     ORDER BY TM_SCRAB_ID DESC) A) AA
+             where AA.rn BETWEEN #firstRecNo# and #lastRecNo#)AAA
+     WHERE AAA. TM_SEARCH_ID = B.TM_SEARCH_ID
+</select>
+
+<select id="scrabForPlan" parameterClass="String" resultClass="myscrabVO">
+   select A. *, B.TM_SEARCH_NAME, B.TM_SEARCH_ADDR, B.TM_SEARCH_CON, B.IMG_ID
+      from TM_SCRAB A, TM_SEARCH B
+     WHERE TM_ID = #tm_id#
+       AND A. TM_SEARCH_ID = B.TM_SEARCH_ID
+     ORDER BY TM_SCRAB_ID DESC
+</select>
+
+
+<!-- 전체 스크랩 카운트 -->
+<select id="countMyScrab" parameterClass="String" resultClass="int">
+	SELECT COUNT(*)
+  	  FROM TM_SCRAB
+  	 WHERE TM_ID = # tm_id#
+</select>
+
+</sqlMap>

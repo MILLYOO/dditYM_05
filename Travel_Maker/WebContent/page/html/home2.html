@@ -1,0 +1,401 @@
+
+<!DOCTYPE html>
+<html class="no-js"> 
+	<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Travel Maker &mdash; 나만의 여행플래너. 쉽고 빠르게 여행을 계획하세요 :)</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Free HTML5 Template by FREEHTML5.CO" />
+	<meta name="keywords" content="free html5, free template, free bootstrap, html5, css3, mobile first, responsive" />
+	<meta name="author" content="FREEHTML5.CO" />
+<style>
+.maincity{
+	width: 300px;
+	height: 300px;
+}
+
+</style>
+  <!-- 
+	//////////////////////////////////////////////////////
+
+	FREE HTML5 TEMPLATE 
+	DESIGNED & DEVELOPED by FREEHTML5.CO
+		
+	Website: 		http://freehtml5.co/
+	Email: 			info@freehtml5.co
+	Twitter: 		http://twitter.com/fh5co
+	Facebook: 		https://www.facebook.com/fh5co
+
+	//////////////////////////////////////////////////////
+	 -->
+
+  	<!-- Facebook and Twitter integration -->
+	<meta property="og:title" content=""/>
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content=""/>
+	<meta property="og:site_name" content=""/>
+	<meta property="og:description" content=""/>
+	<meta name="twitter:title" content="" />
+	<meta name="twitter:image" content="" />
+	<meta name="twitter:url" content="" />
+	<meta name="twitter:card" content="" />
+
+	<!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+	<link rel="shortcut icon" href="favicon.ico">
+
+	<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700,300' rel='stylesheet' type='text/css'>
+	
+	<!-- Animate.css -->
+	<link rel="stylesheet" href="../css/animate.css">
+	<!-- Icomoon Icon Fonts-->
+	<link rel="stylesheet" href="../css/icomoon.css">
+	<!-- Bootstrap  -->
+	<link rel="stylesheet" href="../css/bootstrap.css">
+	<!-- Superfish -->
+	<link rel="stylesheet" href="../css/superfish.css">
+	<!-- Magnific Popup -->
+	<link rel="stylesheet" href="../css/magnific-popup.css">
+	<!-- Date Picker -->
+	<link rel="stylesheet" href="../css/bootstrap-datepicker.min.css">
+	<!-- CS Select -->
+	<link rel="stylesheet" href="../css/cs-select.css">
+	<link rel="stylesheet" href="../css/cs-skin-border.css">
+	
+	<link rel="stylesheet" href="../css/style.css">
+
+
+	<!-- Modernizr JS -->
+	<script src="js/modernizr-2.6.2.min.js"></script>
+	<!-- FOR IE9 below -->
+	<!--[if lt IE 9]>
+	<script src="js/respond.min.js"></script>
+	<![endif]-->
+
+	</head>
+	<body>
+		<div id="fh5co-wrapper">
+		<div id="fh5co-page">
+
+		<header id="fh5co-header-section" class="sticky-banner">
+			<div class="container">
+				<div class="nav-header">
+					<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle dark"><i></i></a>
+					<h1 id="fh5co-logo"><a href="home.html">Travel Maker</a></h1>
+					<!-- START #fh5co-menu-wrap -->
+					<nav id="fh5co-menu-wrap" role="navigation">
+						<ul class="sf-menu" id="fh5co-primary-menu">
+							<li><a href="home.html">Home</a></li>
+							<li>
+								<a href="/views/myPage.html" class="fh5co-sub-ddown">마이페이지</a>
+								<ul class="fh5co-sub-menu">
+									<li><a href="#" target="_self">북마크</a></li>
+									<li><a href="#" target="_self">일정관리</a></li>
+									<li><a href="#" target="_self">장바구니</a></li>
+									<li><a href="#" target="_self">Q & A</a></li>
+									<li><a href="#" target="_self">내 정보 수정</a></li>
+								</ul>
+							</li>
+							<li>
+								<a href="home.html">게시판</a>
+								<ul class="fh5co-sub-menu">
+									<li><a href="/Travel_Maker/views/FreeBoard.html" target="_self">자유 게시판</a></li>
+									<li><a href="/Travel_Maker/views/TravelBoard.html" target="_self">여행리뷰 게시판</a></li>
+									<li><a href="#" target="_self">베스트 여행지 게시판</a></li>
+									<li><a href="/Travel_Maker/views/boardUserQ.html" target="_self">유저끼리 물어봐 게시판</a></li>
+								</ul>							
+							</li>
+							<li>
+								<a href="/Travel_Maker/views/고객센터.html">고객센터</a>
+								<ul class="fh5co-sub-menu">
+									<li><a href="#">공지사항</a></li>
+									<li><a href="#">1:1문의</a></li>
+								</ul>
+							</li>
+							<li><a href="/views/login.html">로그인</a></li>
+							<li><a href="/views/join.html">회원가입</a></li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</header>
+
+		<!-- end:header-top -->
+	
+				<div class="wrap">
+					<div class="main_top_title">
+						<h1 class="title">나만의 여행 플래너 TRAVEL MAKER!<br>
+						쉽고 빠르게 여행을 계획하세요.</h1>
+					</div>
+				</div>
+				<div class="fh5co-cover"  background-size: cover; no-repeat; ">
+				<img alt="" src="../images/배경.jpg">
+				<div class="searchBox">
+				<input class="searchInput" type="text" name="" placeholder="여행지, 맛집명으로 검색해주세요!">
+				<button class="searchButton" href="#">
+					<i class="material-icons">검색 </i>
+				</button>
+					<div id="city_autocomplete"></div>
+					<div class="latest_search">
+					최근검색 : 
+					<a href="#" class="latest_a">부산</a>
+					</div>
+					<a class="go_map" href="javascript:void(0)" onclick="et_full_modal('/ko/modal/world_map')">지도에서 검색 &gt;</a>
+					
+					</div>
+				</div>
+			</div>
+
+		</div>
+		
+		
+		<!-- 여행 사진 3개 넣는 그 칸 시작-->
+		<div id="fh5co-blog-section" class="fh5co-section-gray">
+			<div class="container">
+				<div class="row">
+				</div>
+			</div>
+			<div class="container">
+				<div class="row row-bottom-padded-md">
+					<div class="col-lg-4 col-md-4 col-sm-6"> <!-- 이 박스가 사진들 담는 하얀 상자 -->
+						<div class="fh5co-blog animate-box">
+							<a href="#"><img class="img-responsive" src="images/place-1.jpg" alt=""></a>
+							<div class="blog-text">
+								<div class="prod-title">
+									<h3><a href="#">대전</a></h3>
+									<img class="maincity" alt="대전.jpg" src="../images/대전.jpg">
+									<span class="posted_by">Sep. 15th</span> 
+									<span class="comment"><a href="">조회수연결해야돼여<i class="icon-bubble2">♥</i></a></span>
+									<p>평화의 도시 대전 핫플 구경하기</p>
+								</div>
+							</div> 
+						</div>
+					</div>
+					<div class="col-lg-4 col-md-4 col-sm-6">
+						<div class="fh5co-blog animate-box">
+							<a href="#"><img class="img-responsive" src="images/place-2.jpg" alt=""></a>
+							<div class="blog-text">
+								<div class="prod-title">
+									<h3><a href="#">부산</a></h3>
+									<img class="maincity" alt="부산.jpg" src="../images/부산.jpg">
+									<span class="posted_by">Sep. 15th</span>
+									<span class="comment"><a href="">조회수연결해야돼여<i class="icon-bubble2">♥</i></a></span>
+									<p>광안대교에서 드라이브 어때요?</p>
+								</div>
+							</div> 
+						</div>
+					</div>
+					<div class="clearfix visible-sm-block"></div>
+					<div class="col-lg-4 col-md-4 col-sm-6">
+						<div class="fh5co-blog animate-box">
+							<a href="#"><img class="img-responsive" src="images/place-3.jpg" alt=""></a>
+							<div class="blog-text">
+								<div class="prod-title">
+									<h3><a href="#">서울</a></h3>
+									<img class="maincity" alt="서울.jpg" src="../images/서울.jpg">
+									<span class="posted_by">Sep. 20th</span>
+									<span class="comment"><a href="">조회수연결해야돼여<i class="icon-bubble2">♥</i></a></span>
+									<p>#클린하이킹 명소를 찾아떠나는 서울 등산투어</p>
+								</div>
+							</div> 
+						</div>
+					</div>
+					<div class="col-lg-4 col-md-4 col-sm-6"> <!-- 이 박스가 사진들 담는 하얀 상자 -->
+						<div class="fh5co-blog animate-box">
+							<a href="#"><img class="img-responsive" src="images/place-1.jpg" alt=""></a>
+							<div class="blog-text">
+								<div class="prod-title">
+									<h3><a href="#">대전</a></h3>
+									<img class="maincity" alt="대전.jpg" src="../images/대전.jpg">
+									<span class="posted_by">Sep. 15th</span> 
+									<span class="comment"><a href="">조회수연결해야돼여<i class="icon-bubble2">♥</i></a></span>
+									<p>평화의 도시 대전 핫플 구경하기</p>
+								</div>
+							</div> 
+						</div>
+					</div>
+					<div class="col-lg-4 col-md-4 col-sm-6">
+						<div class="fh5co-blog animate-box">
+							<a href="#"><img class="img-responsive" src="images/place-2.jpg" alt=""></a>
+							<div class="blog-text">
+								<div class="prod-title">
+									<h3><a href="#">부산</a></h3>
+									<img class="maincity" alt="부산.jpg" src="../images/부산.jpg">
+									<span class="posted_by">Sep. 15th</span>
+									<span class="comment"><a href="">조회수연결해야돼여<i class="icon-bubble2">♥</i></a></span>
+									<p>광안대교에서 드라이브 어때요?</p>
+								</div>
+							</div> 
+						</div>
+					</div>
+					<div class="clearfix visible-sm-block"></div>
+					<div class="col-lg-4 col-md-4 col-sm-6">
+						<div class="fh5co-blog animate-box">
+							<a href="#"><img class="img-responsive" src="images/place-3.jpg" alt=""></a>
+							<div class="blog-text">
+								<div class="prod-title">
+									<h3><a href="#">서울</a></h3>
+									<img class="maincity" alt="서울.jpg" src="../images/서울.jpg">
+									<span class="posted_by">Sep. 20th</span>
+									<span class="comment"><a href="">조회수연결해야돼여<i class="icon-bubble2">♥</i></a></span>
+									<p>#클린하이킹 명소를 찾아떠나는 서울 등산투어</p>
+								</div>
+							</div> 
+						</div>
+					</div>
+
+			</div>
+		</div>
+		<!-- fh5co-blog-section -->
+		<div id="fh5co-testimonial" style="background-image:url(images/img_bg_1.jpg);">
+		<div class="container">
+			<div class="row animate-box">
+				<div class="col-md-8 col-md-offset-2 text-center fh5co-heading">
+					<h2>트매픽! 추천 여행지!!</h2>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-4">
+					<div class="box-testimony animate-box">
+						<blockquote>
+							<span class="quote"><img class="icon-quotes-right" src="images/여자.png" alt=""></i></span>
+							<p>&ldquo;어쩌구저쩌구해서 픽했다. 주말 어떠세요???&rdquo;</p> <!-- &ldquo;&rdquo; : 큰따옴표 표시 -->
+						</blockquote>
+						<p class="author">경미 대리픽!</p>
+					</div>
+					
+				</div>
+				<div class="col-md-4">
+					<div class="box-testimony animate-box">
+						<blockquote>
+							<span class="quote"><span><i class="icon-quotes-right"></i></span></span>
+							<p>&ldquo;어쩌구저쩌구해서 픽했다. 주말 어떠세요???&rdquo;</p>
+						</blockquote>
+						<p class="author">유밀 차장픽!</p>
+					</div>
+					
+					
+				</div>
+				<div class="col-md-4">
+					<div class="box-testimony animate-box">
+						<blockquote>
+							<span class="quote"><span><i class="icon-quotes-right"></i></span></span>
+							<p>&ldquo;어쩌구저쩌구해서 픽했다. 주말 어떠세요???&rdquo;</p>
+						</blockquote>
+						<p class="author">영관 사장픽!</p>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+	</div>
+<!-- 		<footer> -->
+<!-- 			<div id="footer"> -->
+<!-- 				<div class="container"> -->
+<!-- 					<div class="row row-bottom-padded-md"> -->
+<!-- 						<div class="col-md-2 col-sm-2 col-xs-12 fh5co-footer-link"> -->
+<!-- 							<h3>About Travel</h3> -->
+<!-- 							<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p> -->
+<!-- 						</div> -->
+<!-- 						<div class="col-md-2 col-sm-2 col-xs-12 fh5co-footer-link"> -->
+<!-- 							<h3>Top Flights Routes</h3> -->
+<!-- 							<ul> -->
+<!-- 								<li><a href="#">Manila flights</a></li> -->
+<!-- 								<li><a href="#">Dubai flights</a></li> -->
+<!-- 								<li><a href="#">Bangkok flights</a></li> -->
+<!-- 								<li><a href="#">Tokyo Flight</a></li> -->
+<!-- 								<li><a href="#">New York Flights</a></li> -->
+<!-- 							</ul> -->
+<!-- 						</div> -->
+<!-- 						<div class="col-md-2 col-sm-2 col-xs-12 fh5co-footer-link"> -->
+<!-- 							<h3>Top Hotels</h3> -->
+<!-- 							<ul> -->
+<!-- 								<li><a href="#">Boracay Hotel</a></li> -->
+<!-- 								<li><a href="#">Dubai Hotel</a></li> -->
+<!-- 								<li><a href="#">Singapore Hotel</a></li> -->
+<!-- 								<li><a href="#">Manila Hotel</a></li> -->
+<!-- 							</ul> -->
+<!-- 						</div> -->
+<!-- 						<div class="col-md-2 col-sm-2 col-xs-12 fh5co-footer-link"> -->
+<!-- 							<h3>Interest</h3> -->
+<!-- 							<ul> -->
+<!-- 								<li><a href="#">Beaches</a></li> -->
+<!-- 								<li><a href="#">Family Travel</a></li> -->
+<!-- 								<li><a href="#">Budget Travel</a></li> -->
+<!-- 								<li><a href="#">Food &amp; Drink</a></li> -->
+<!-- 								<li><a href="#">Honeymoon and Romance</a></li> -->
+<!-- 							</ul> -->
+<!-- 						</div> -->
+<!-- 						<div class="col-md-2 col-sm-2 col-xs-12 fh5co-footer-link"> -->
+<!-- 							<h3>Best Places</h3> -->
+<!-- 							<ul> -->
+<!-- 								<li><a href="#">Boracay Beach</a></li> -->
+<!-- 								<li><a href="#">Dubai</a></li> -->
+<!-- 								<li><a href="#">Singapore</a></li> -->
+<!-- 								<li><a href="#">Hongkong</a></li> -->
+<!-- 							</ul> -->
+<!-- 						</div> -->
+<!-- 						<div class="col-md-2 col-sm-2 col-xs-12 fh5co-footer-link"> -->
+<!-- 							<h3>Affordable</h3> -->
+<!-- 							<ul> -->
+<!-- 								<li><a href="#">Food &amp; Drink</a></li> -->
+<!-- 								<li><a href="#">Fare Flights</a></li> -->
+<!-- 							</ul> -->
+<!-- 						</div> -->
+<!-- 					</div> -->
+<!-- 					<div class="row"> -->
+<!-- 						<div class="col-md-6 col-md-offset-3 text-center"> -->
+<!-- 							<p class="fh5co-social-icons"> -->
+<!-- 								<a href="#"><i class="icon-twitter2"></i></a> -->
+<!-- 								<a href="#"><i class="icon-facebook2"></i></a> -->
+<!-- 								<a href="#"><i class="icon-instagram"></i></a> -->
+<!-- 								<a href="#"><i class="icon-dribbble2"></i></a> -->
+<!-- 								<a href="#"><i class="icon-youtube"></i></a> -->
+<!-- 							</p> -->
+<!-- 							Shared by <i class="fa fa-love"></i><a href="https://bootstrapthemes.co">BootstrapThemes</a> -->
+<!-- 						</div> -->
+<!-- 					</div> -->
+<!-- 				</div> -->
+<!-- 			</div> -->
+<!-- 		</footer> -->
+
+	
+
+	</div>
+	<!-- END fh5co-page -->
+
+	</div>
+	<!-- END fh5co-wrapper -->
+
+	<!-- jQuery -->
+
+
+	<script src="js/jquery.min.js"></script>
+	<!-- jQuery Easing -->
+	<script src="js/jquery.easing.1.3.js"></script>
+	<!-- Bootstrap -->
+	<script src="js/bootstrap.min.js"></script>
+	<!-- Waypoints -->
+	<script src="js/jquery.waypoints.min.js"></script>
+	<script src="js/sticky.js"></script>
+
+	<!-- Stellar -->
+	<script src="js/jquery.stellar.min.js"></script>
+	<!-- Superfish -->
+	<script src="js/hoverIntent.js"></script>
+	<script src="js/superfish.js"></script>
+	<!-- Magnific Popup -->
+	<script src="js/jquery.magnific-popup.min.js"></script>
+	<script src="js/magnific-popup-options.js"></script>
+	<!-- Date Picker -->
+	<script src="js/bootstrap-datepicker.min.js"></script>
+	<!-- CS Select -->
+	<script src="js/classie.js"></script>
+	<script src="js/selectFx.js"></script>
+	
+	<!-- Main JS -->
+	<script src="js/main.js"></script>
+
+	</body>
+</html>
+

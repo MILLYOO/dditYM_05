@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="plan">
+
+	<!-- 전체 리스트 -->
+	<select id="selectAll" resultClass="planVO" parameterClass="String">
+		select * from TM_PLAN 
+		where TM_ID = #tm_id#
+		order by TM_PLAN_ID desc 
+	</select>
+
+
+	<select id="planDetail" resultClass="planDetailVO" parameterClass="String">
+		select * from TM_PLAN_DETAIL where TM_PLAN_ID = #tm_plan_id# 
+		order by TM_PLAN_NO asc
+	</select>
+
+
+	<delete id="deleteBoard" parameterClass="String">
+		delete TM_PLAN where TM_PLAN_ID = #tm_plan_id#
+	</delete>
+
+	<delete id="deleteBoardDetail" parameterClass="String">
+		delete TM_PLAN_DETAIL where TM_PLAN_ID = #tm_plan_id#
+	</delete>
+
+
+	<insert id="planInsert" parameterClass="planVO">
+		insert into tm_plan values((select NVL(max(tm_plan_id),0)+1 from tm_plan),#tm_plan_name#,sysdate,#tm_id#)
+		<selectKey resultClass="String" keyProperty="tm_plan_id">
+			select NVL(max(tm_plan_id),0) from tm_plan
+		</selectKey>
+	</insert>
+
+	<insert id="planDInsert" parameterClass="planDetailVO">
+		insert into tm_plan_detail values((select NVL(max(tm_plan_no),0)+1 from tm_plan_detail), #tm_plan_id#, #tm_plan_start#, #tm_plan_end#, #tm_plan_detail#)
+	
+	</insert>
+
+
+</sqlMap>

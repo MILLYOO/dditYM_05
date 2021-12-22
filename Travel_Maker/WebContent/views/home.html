@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+
+<title>Travel Maker &mdash; 나만의 여행플래너. 쉽고 빠르게 여행을 계획하세요 :)</title>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e08d921eaf92b6587ac46f3f1255b6a3&libraries=services"></script>
+<link rel="stylesheet"
+   href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="../page/css/default.css">
+<link rel="stylesheet" type="text/css" href="../page/css/style2.css">
+<script
+   src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script
+   src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+   
+<script src="../js/admin.js"></script>
+<script src="../js/SearchLikeHate.js"></script>
+
+<script type="text/javascript">
+   $(document).ready(function() {
+      $("#header").load("MainHeader.jsp")
+      $("#footers").load("footer.html")
+      
+       bestDestInsert();
+      
+      $(".material-icons").on('click', function(){
+         if($(".searchInput").val() == null || $(".searchInput").val() == ""){
+            alert("지역을 입력해주세요");
+            return 0;
+         }
+         $(".search").empty();
+//          document.querySelector('.search').scrollIntoView(true)
+         const speed = 500;
+
+         $('html, body').animate({
+            scrollTop: $(".search").offset().top
+            }, speed);
+
+          $(".search").load("./Search/userSearch.jsp?search=" + $(".searchInput").val());
+      })
+      
+      $('.searchInput').keypress(function(event){
+           if ( event.which == 13 ) {
+               $('.material-icons').click();
+               return false;
+           }
+      });
+      
+      $(document).off().on('click', '.card', function(){
+         // 모달 타이틀, 내용, 번호 넣기
+         $("#modalScrap").empty();
+         $.ajax({
+            url : '/Travel_Maker/searchInfo2.do',
+            type : 'post',
+            data : {"data" : $(this).prop("id")},
+            dataType : 'json',
+            success : function(res) {
+               var id = res.tm_search_id;
+               var title = res.tm_search_name;
+               var latlng = new kakao.maps.LatLng(
+                     res.tm_search_y,
+                     res.tm_search_x);
+               var img = res.img_id;
+               var addr = res.tm_search_addr;
+               var tel = res.tm_search_tel;
+               var cate = res.tm_search_cate;
+               var con = res.tm_search_con;
+               $(".modalId").text(id);
+               $("#modalTitle").text(title);
+               $("#modalContent").text(con);
+               $("#exampleModalCenter").modal("show");
+            },
+            error : function(xhr){
+               alert("상태 : " + xhr.status);
+            },
+            async: false
+         })
+         
+         //좋아요 숫자 확인용
+			$.ajax({
+				url : '/Travel_Maker/GetLikeCount.do',
+				type : 'post',
+				data : {"TM_SEARCH_ID" :  $(this).prop("id")},
+				dataType : 'json',
+				success : function(res) {
+					likecount = res.cnt;
+					$('#likecount').text(likecount);
+				},
+				error : function(xhr){
+					alert("상태: " + xhr.status);
+				}
+			})
+         
+         
+         //좋아요 확인용
+         searchNo = $(".modalId").text();
+         $.ajax({
+               url : '/Travel_Maker/SearchLikeCheck.do',
+               async: false,
+               type : 'post',
+               data : {"tm_search_id" : searchNo},
+               success : function(res){
+                  cnt = res.cnt;
+               },
+               error : function(xhr){
+               },
+               dataType : 'json'
+            })
+            if(cnt != 0){
+               $('#likeon').show();
+               $('#likeoff').hide();
+            }
+            else{
+               $('#likeon').hide();
+               $('#likeoff').show();
+            }
+         
+         
+         
+         // 모달 좋아요 수 넣기
+         $(document).off().on('click', '.icon-heart, .icon-heart-o', function(){
+            
+            console.log("좋아요 버튼 클릭");
+            
+            searchNo = $(".modalId").text(); // 검색ID 확인
+            
+            $('#likeoff').hide();
+			$('#likeon').hide();
+            
+            // 좋아요 여부 확인용
+            $.ajax({
+               url : '/Travel_Maker/SearchLikeCheck.do',
+               async: false,
+               type : 'post',
+               data : {"tm_search_id" : searchNo},
+               success : function(res){
+                  cnt = res.cnt;
+               },
+               error : function(xhr){
+
+               },
+               dataType : 'json'
+                  
+            })
+            
+            
+            
+            if(cnt == 0){
+               // 좋아요 적용
+
+               $.ajax({
+                  url      : '/Travel_Maker/SearchLikeAdd.do',
+                  async: false,
+                  type   : 'post',
+                  data : {"tm_search_id" : searchNo},
+                  success   : function (res) {
+                     alert("좋아요를 누르셨습니다.");
+                     $('#likeon').show();
+                     $('#likeoff').hide();
+                     
+                     cnt = parseInt($('#likecount').text());
+						likecount = (cnt)+1;
+						$('#likecount').text(likecount);
+						
+
+                  },
+                  error   : function (xhr) {
+                         alert('좋아요 적용애러 : ' + xhr.status);
+                  },
+                  dataType: 'json'
+               })   
+               
+            }
+            else{
+               // 좋아요 취소(다시 누른 경우)
+
+               $.ajax({
+                  url      : '/Travel_Maker/SearchLikeCancel.do',
+                  async: false,
+                  type   : 'post',
+                  data : {"tm_search_id" : searchNo},
+                  success   : function (res) {
+                     alert("좋아요가 취소 되었습니다.")   
+                     $('#likeon').hide();
+                     $('#likeoff').show();
+                     
+                     cnt = parseInt($('#likecount').text());
+						likecount = (cnt)-1;
+						$('#likecount').text(likecount);
+
+                  },
+                  error   : function (xhr) {
+                     alert('좋아요 취소 애러 : ' + xhr.status);
+                     
+                  },
+                  dataType: 'json'
+               })
+            }   
+            $('.icon-heart').off("click"); 
+         })
+         
+         
+         
+         
+         
+         
+         // 모달 버튼 추가하기
+         $.ajax({
+            url : '/Travel_Maker/ScrapButton.do',
+            type : 'get',
+            data : {"id" : $(this).prop("id")},
+            dataType : 'json',
+            success : function(res) {
+               if(res.sw=="true"){
+                  $("#modalScrap").append('<span class="icon-minus mr-2" id ="scrapDelete"></span>');
+               }else{
+                  $("#modalScrap").append('<span class="icon-plus mr-2" id ="scrapInsert"></span>');
+               }
+            },
+            error : function(xhr){
+               alert("상태: " + xhr.status);
+            }
+         })
+      })
+      
+      $(document).on('click','.icon-plus' , function(){
+         $.ajax({
+            url : '/Travel_Maker/ScrapInsert.do',
+            type : 'get',
+            data : {"id" : $(".modalId").text()},
+            dataType : 'json',
+            success : function(res) {
+               if(res.cnt > 0){
+                  $("#modalScrap").empty();
+                  $("#modalScrap").append('<span class="icon-minus mr-2"></span>');
+               }else{
+                  alert(res.sw);
+               }
+            },
+            error : function(xhr){
+               alert("상태: " + xhr.status);
+            }
+         })
+      })
+      
+      $(document).on('click','.icon-minus', function(){
+         $.ajax({
+            url : '/Travel_Maker/ScrapDelete.do',
+            type : 'get',
+            data : {"id" : $(".modalId").text()},
+            dataType : 'json',
+            success : function(res) {
+               if(res.cnt > 0){
+                  $("#modalScrap").empty();
+                  $("#modalScrap").append('<span class="icon-plus mr-2"></span>');
+               }else{
+                  alert(res.sw);
+               }
+            },
+            error : function(xhr){
+               alert("상태: " + xhr.status);
+            }
+         })
+      })
+      
+      
+   });
+   
+</script>
+</head>
+<body>
+   <!-- 헤더영역 -->
+   <div id="header"></div>
+   <!-- 헤더영역 끝 -->
+   <!-- 본문영역 -->
+   <div class="main">
+      <div class="visual-wrap">
+         <img src="../page/images/main.jpg" class="visual" alt="">
+         <div class="main-txt">
+            나만의 여행 플래너 TRAVEL MAKER!<br> <span>쉽게 빠르게 여행을 계획하세요.</span>
+         </div>
+         <div class="searchBox">
+            <input class="searchInput" type="text" name=""
+               placeholder="여행지, 맛집명으로 검색해주세요!">
+            <button class="searchButton">
+               <div class="material-icons">검색</div>
+            </button>
+            <div id="city_autocomplete"></div>
+            <div class="latest_search">
+               최근검색 : <a href="#" class="latest_a">부산</a>
+            </div>
+
+         </div>
+      </div>
+      <div class="search"></div>
+      <div id="fh5co-blog-section" class="fh5co-section-gray">
+         <div class="container">
+            <div class="row"></div>
+         </div>
+         <div class="container">
+            <div id="bestDiv" class="row row-bottom-padded-md">
+<!--                베스트 여행지 들어가는 칸 -->
+
+            </div>
+         </div>
+         <!-- fh5co-blog-section -->
+         <div id="fh5co-testimonial">
+            <div class="container">
+<!--                <div class="row animate-box"> -->
+                  <div class="TM">
+                     <h2 id="TM">트매픽! 추천 여행지!!</h2>
+                  </div>
+<!--                </div> -->
+               <div class="row">
+                  <div class="col-md-4">
+                     <div class="box-testimony animate-box">
+                        <blockquote>
+                           <span class="quote"><img class="icon-quotes-right"
+                              src="../page/images/여자.png" alt=""></span>
+                           <p>&nbsp;<strong>제주 성산 일출봉에서 승마 체험!</strong><br><br>
+                           	&ldquo;푸른 하늘과 투명한 바다를 마음껏 느낄 수 있는 아름다운 명소랍니다. 성산일출봉을 배경으로 말 위에서 사진 한 장 남겨보는 건 어떨까요?&rdquo;</p>
+                           <!-- &ldquo;&rdquo; : 큰따옴표 표시 -->
+                        </blockquote>
+                        <p class="author">경미 대리픽!</p>
+                     </div>
+
+                  </div>
+                  <div class="col-md-4">
+                     <div class="box-testimony animate-box">
+                        <blockquote>
+                           <span class="quote"><img class="icon-quotes-right"
+                              src="../page/images/남자.png" alt=""></span>
+                           <p>&nbsp;<strong>산굼부리 등산 코스!</strong><br><br>
+                           	&ldquo; 올라가는 길에 핀 화려한 억새가 눈길을 사로잡는 곳이에요. 전망대에서 바라보는 제주의 풍경은 가슴을 뻥 뚫리게 해주는 힐링의 코스랍니다.&rdquo;</p>
+                        </blockquote>
+                        <p class="author">유밀 차장픽!</p>
+                     </div>
+
+
+                  </div>
+                  <div class="col-md-4">
+                     <div class="box-testimony animate-box">
+                        <blockquote>
+                           <span class="quote"><img class="icon-quotes-right"
+                              src="../page/images/남자.png" alt=""></span>
+                           <p>&nbsp;<strong>송도해수욕장 스카이워크!</strong><br><br>
+                           	&ldquo;바다 위를 걷는 기분 상상해보셨나요? 소중한 사람과 함께 이 바다 위를 걷는 다면 추위도 달아날 낭만적인 여행이 될꺼에요!&rdquo;</p>
+                        </blockquote>
+                        <p class="author">영관 사장픽!</p>
+                     </div>
+
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="footers"></div>
+
+
+<script>
+  (function() {
+    var w = window;
+    if (w.ChannelIO) {
+      return (window.console.error || window.console.log || function(){})('ChannelIO script included twice.');
+    }
+    var ch = function() {
+      ch.c(arguments);
+    };
+    ch.q = [];
+    ch.c = function(args) {
+      ch.q.push(args);
+    };
+    w.ChannelIO = ch;
+    function l() {
+      if (w.ChannelIOInitialized) {
+        return;
+      }
+      w.ChannelIOInitialized = true;
+      var s = document.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = 'https://cdn.channel.io/plugin/ch-plugin-web.js';
+      s.charset = 'UTF-8';
+      var x = document.getElementsByTagName('script')[0];
+      x.parentNode.insertBefore(s, x);
+    }
+    if (document.readyState === 'complete') {
+      l();
+    } else if (window.attachEvent) {
+      window.attachEvent('onload', l);
+    } else {
+      window.addEventListener('DOMContentLoaded', l, false);
+      window.addEventListener('load', l, false);
+    }
+  })();
+  ChannelIO('boot', {
+    "pluginKey": "b47d8c48-4636-4243-9652-0a989ff10801"
+  });
+</script>
+<!-- End Channel Plugin -->
+
+
+</body>
+</html>

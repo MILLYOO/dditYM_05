@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+   			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" 
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+			
+<!-- namespace 수정!!! -->
+<sqlMap namespace="ticket">
+
+
+
+<select id="ticketSearch" resultClass="prodVO" parameterClass="prodVO">
+SELECT  TM_PROD_ID,
+		TM_PROD_NAME,
+		TM_PROD_PRICE,
+		TM_PROD_COMP,
+		TM_BIMG_ID
+   FROM TM_PROD
+  WHERE 1=1
+ <isNotEmpty property="tm_prod_comp">AND TM_PROD_COMP LIKE '%' || #tm_prod_comp# || '%'</isNotEmpty>
+</select>
+
+<insert id="bascketInsert" parameterClass="cartVO">
+INSERT INTO TM_CART
+     VALUES (1,
+			#tm_id#,
+			#tm_prod_id#,
+			(SELECT TM_PROD_NAME FROM TM_PROD WHERE TM_PROD_ID=#tm_prod_id#),
+			#tm_cart_qty#,
+			(SELECT TM_PROD_PRICE FROM TM_PROD WHERE TM_PROD_ID=#tm_prod_id#)*#tm_cart_qty#,
+			'X')
+			
+</insert>
+
+<!-- <select id="prodSearch" parameterClass="String" resultClass="prodVO"> -->
+<!-- SELECT * -->
+<!--   FROM TM_PROD -->
+<!--  WHERE TM_PROD_ID=#tm_prod_id# -->
+<!-- </select> -->
+
+<select id="myCartList" parameterClass="String" resultClass="cartVO">
+SELECT A.TM_CART_NO AS TM_CART_NO,
+       A.TM_ID AS TM_ID,
+       A.TM_PROD_ID AS TM_PROD_ID,
+       A.TM_PROD_NAME AS TM_PROD_NAME,
+       A.TM_CART_QTY AS TM_CART_QTY,
+       A.TM_CART_PRICE AS TM_CART_PRICE,
+       B.TM_PROD_COMP AS TM_PROD_COMP
+  FROM TM_CART A, TM_PROD B
+ WHERE A.TM_PROD_ID=B.TM_PROD_ID
+   AND A.TM_ID=#tm_id#
+   AND A.TM_CART_OX='X'
+</select>
+
+<select id="myBuyList" parameterClass="String" resultClass="cartVO">
+SELECT A.TM_CART_NO AS TM_CART_NO,
+       A.TM_ID AS TM_ID,
+       A.TM_PROD_ID AS TM_PROD_ID,
+       A.TM_PROD_NAME AS TM_PROD_NAME,
+       A.TM_CART_QTY AS TM_CART_QTY,
+       A.TM_CART_PRICE AS TM_CART_PRICE,
+       B.TM_PROD_COMP AS TM_PROD_COMP
+  FROM TM_CART A, TM_PROD B
+ WHERE A.TM_PROD_ID=B.TM_PROD_ID
+   AND A.TM_ID=#tm_id#
+   AND A.TM_CART_OX='O'
+</select>
+
+<!-- 회원의 장바구니 총 개수, 가격 -->
+<select id="cartTotal" parameterClass="String" resultClass="cartVO">
+SELECT SUM(TM_CART_QTY) AS TOTALCOUNT,
+       SUM(TM_CART_PRICE) AS TOTALPRICE
+  FROM TM_CART
+ WHERE TM_ID=#tm_id#
+</select>
+
+<!-- 장바구니 개수 수정 -->
+<update id="cartUpdate" parameterClass="cartVO">
+UPDATE TM_CART
+   SET TM_CART_QTY=#tm_cart_qty#,
+   	   TM_CART_PRICE=(TM_CART_PRICE/TM_CART_QTY)*#tm_cart_qty#
+ WHERE TM_ID=#tm_id#
+   AND TM_PROD_ID=#tm_prod_id#
+   AND TM_CART_OX='X'
+</update>
+
+<delete id="cartDelete" parameterClass="cartVO">
+DELETE TM_CART
+ WHERE TM_ID=#tm_id#
+   AND TM_PROD_ID=#tm_prod_id#
+   AND TM_CART_OX='X'
+</delete>
+
+<!-- 결제 시 cart테이블 구매여부 변경 -->
+<update id="cartOxUpdate" parameterClass="cartVO">
+UPDATE TM_CART
+   SET TM_CART_OX='O'
+ WHERE TM_ID=#tm_id#
+   AND TM_CART_NO=#tm_cart_no#
+   AND TM_CART_OX='X'
+</update>
+
+<!-- 결제 정보 등록 -->
+<!-- <insert id="payInfoInsert" parameterClass="podVO"> -->
+<!-- INSERT INTO TM_POD -->
+<!--      VALUES( -->
+<!--             (SELECT NVL(MAX(TM_BUYINFO_ID),0)+1 FROM TM_POD), -->
+<!--             (SELECT DISTINCT TM_CART_NO FROM TM_CART WHERE TM_ID=#tm_id#), -->
+<!--             #tm_id#, -->
+<!--             '상품번호', -->
+<!--             'inicis', -->
+<!--             #tm_pod_type#, -->
+<!--             #tm_pod_data#, -->
+<!--             SYSDATE -->
+<!--             ); -->
+<!-- </insert> -->
+
+<!-- 결제 내역 등록 -->
+<!-- <insert id="buyInfoInsert" parameterClass="String"> -->
+<!-- INSERT INTO TM_BUYLIST(TM_BUY_ID,TM_BUYINFO_ID,TM_CART_NO,TM_ID,TM_PROD_ID,TM_BUY_DATE) -->
+<!--      VALUES( -->
+<!--             (SELECT NVL(MAX(TM_BUY_ID),0)+1 FROM TM_BUYLIST), -->
+<!--             (SELECT TM_BUYINFO_ID FROM TM_POD WHERE TM_ID=#tm_id#), -->
+<!--             (SELECT DISTINCT TM_CART_NO FROM TM_CART WHERE TM_ID=#tm_id#), -->
+<!--             #tm_id#, -->
+<!--             '상품번호', -->
+<!--             (SELECT TM_POD_DATATIME FROM TM_POD WHERE TM_ID=#tm_id#) -->
+<!--             ); -->
+<!-- </insert> -->
+
+</sqlMap>

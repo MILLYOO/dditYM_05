@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" href="../page/css/default.css">
+<link rel="stylesheet" type="text/css" href="../page/css/style2.css">
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#header").load("header.html")
+		$("#footers").load("footer.html")
+	});
+</script>
+<style type="text/css">
+.card-title {
+	text-align: center;
+}
+</style>
+<script type="text/javascript">
+$(function(){
+	
+	$("#test").on('click',function(){
+		$("#myModal").modal("toggle");
+	})
+	
+})
+</script>
+</head>
+<body>
+	<div id="header"></div>
+<div id="myModal" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+				<!-- Modal content-->
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">일정 만들기</h4>
+					</div>
+					<div class="modal-body">
+						<form>
+							<label>일정이름</label>
+							<input type ="text" id ="modal_pl_title" placeholder="일정 이름을 입력해 주세요!!" >
+						</form>
+
+					</div>
+					<div class="modal-footer">
+						<input type="button" class="btn btn-default" value="만들기" id="send">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+	<input type="button" id = "test" value ="test1">
+<h3 id = title> zzzz</h3>
+	<div id="footers"></div>
+</body>
+</html>

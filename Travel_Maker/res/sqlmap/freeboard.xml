@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="freeboard">
+
+<!-- 글쓴이 확인 -->
+<select id="checkBoardWriter" parameterClass="int" resultClass="String">
+SELECT TM_ID
+  FROM TM_BOARD
+ WHERE TM_B_NO = #tm_b_no#
+   AND TM_CATEGORY_ID = 100
+</select>
+
+<!-- 댓쓴이 확인 -->
+<select id="checkReWriter" parameterClass="int"  resultClass="String">
+SELECT TM_ID
+  FROM TM_B_COMMENT
+ WHERE TM_BC_NO = #tm_bc_no#
+</select>
+
+<!-- 유저 등급 확인 -->
+<select id="checkNotUser" parameterClass="String"  resultClass="int">
+SELECT TM_AUTHOR
+  FROM TM_MEMBER
+ WHERE TM_ID = #tm_id#
+</select>
+
+	<!-- 전체 리스트 -->
+	<select id="selectAll" resultClass="boardVO">
+		select * from TM_BOARD 
+		where TM_CATEGORY_ID = 100
+		order by TM_B_NO desc 
+	</select>
+
+	<!-- 페이지 별 리스트 -->
+	<select id="selectByPage" resultClass="boardVO" parameterClass="map">
+	<![CDATA[
+		select A.* from (
+			select rownum as rnum, B.* from (
+				select * from TM_BOARD				
+				where TM_CATEGORY_ID = 100
+				order by TM_B_NO desc) B
+				
+			   
+	      where rownum <= #end#) A 
+		where A.rnum >=#start#
+	  ]]>
+	</select>
+	
+
+
+
+	<!--  -->
+	<select id="getTotalCount" resultClass="int">
+		select count(*) from TM_BOARD where TM_CATEGORY_ID = 100
+	</select> 
+
+	<insert id="insertBoard" parameterClass="boardVO">
+	insert into TM_BOARD (
+		TM_B_NO,
+		TM_CATEGORY_ID,
+		TM_ID,
+		TM_B_TITLE,
+		TM_B_CONTENT,
+		TM_B_OX,
+		TM_B_DATE,
+		TM_B_HIT,
+		TM_B_MODATE
+		) 
+		
+		values(
+		(select NVL(max(TM_B_NO),0)+1 from tm_board where TM_CATEGORY_ID = 100),
+		100,
+		#tm_id#,
+		#tm_b_title#,
+		#tm_b_content#,
+		0,
+		SYSDATE,
+		0,
+		SYSDATE
+
+	)
+	</insert>
+
+
+	<insert id="replySave" parameterClass="replyVO">
+		insert into TM_B_COMMENT (	
+		TM_BC_NO,
+		TM_ID,
+		TM_B_NO,
+		TM_CATEGORY_ID,
+		TM_BC_CONTENT,
+		TM_BC_DATE,
+		TM_BC_MODATE
+		)
+		values (
+			(select NVL(max(TM_BC_NO),0)+1 from tm_b_comment),
+			#tm_id#,
+			#tm_b_no#,
+			100,
+			#tm_bc_content#,
+			sysdate,
+			sysdate		
+		)
+		
+	<!-- 	<selectKey keyProperty="TM_BC_NO" resultClass="int">
+			select TM_BC_NO from TM_B_COMMENT where TM_BC_NO = max(TM_BC_NO)
+		</selectKey>
+ -->
+
+
+	</insert>
+	
+	<select id="replyList" resultClass="replyVO" parameterClass="int">
+		select * from TM_B_COMMENT where TM_B_NO = #tm_b_no# and TM_CATEGORY_ID = 100 order by TM_BC_NO desc
+	</select>
+
+	<update id="replyModify" parameterClass="replyVO">
+		update TM_B_COMMENT 
+		set 
+		TM_BC_CONTENT = #tm_bc_content#, 
+		TM_BC_MODATE = SYSDATE
+		where TM_BC_NO = #tm_bc_no# 
+		and TM_CATEGORY_ID = 100
+	</update>
+
+	<delete id="replyDelete" parameterClass="int">
+		delete TM_B_COMMENT where TM_BC_NO = #tm_bc_no# and TM_CATEGORY_ID = 100
+	</delete>
+	
+	<delete id="replyDeleteAll" parameterClass="int">
+		delete TM_B_COMMENT where TM_B_NO = #tm_b_no# and TM_CATEGORY_ID = 100
+	</delete>
+
+	<update id="hitUpdates" parameterClass="int" >
+		update TM_BOARD set TM_B_HIT=TM_B_HIT+1 where TM_B_NO=#data# and TM_CATEGORY_ID = 100
+	</update>
+
+	<update id="modifyBoard" parameterClass="boardVO">
+		update TM_BOARD 
+		set	
+		TM_B_TITLE = #tm_b_title#,
+		TM_B_CONTENT = #tm_b_content#,
+		TM_B_MODATE = SYSDATE
+		where TM_B_NO = #tm_b_no#
+		and TM_CATEGORY_ID = 100
+	</update>
+	
+	<delete id="deleteBoard">
+		delete TM_BOARD where TM_B_NO = #tm_b_no# and TM_CATEGORY_ID = 100
+	</delete>
+
+
+	<select id="getBoard" resultClass ="boardVO">
+		select * from TM_BOARD where TM_B_NO = #tm_b_no# and TM_CATEGORY_ID = 100
+	</select>
+
+
+
+
+
+
+
+
+
+</sqlMap>

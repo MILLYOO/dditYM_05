@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+			
+<!-- namespace 수정!!! -->
+<sqlMap namespace="member">
+ 
+<!--  아이디찾기 -->
+<select id="findId" parameterClass="memVO" resultClass="String">
+	SELECT TM_ID
+	  FROM TM_MEMBER
+	 WHERE TM_NAME=#tm_name#
+	   AND TM_TEL=#tm_tel#
+</select>
+
+<!-- 비밀번호 찾기  -->
+<select id="findPw" parameterClass="memVO" resultClass="String">
+	SELECT TM_PASS
+	  FROM TM_MEMBER
+	 WHERE TM_ID=#tm_id#
+	   AND TM_TEL=#tm_tel#
+	   AND TM_EMAIL=#tm_email#
+</select>
+
+<!-- 로그인 입력값 대조-->
+<select id="loginCheck" parameterClass="memVO" resultClass="int">
+	SELECT COUNT(*)
+	  FROM TM_MEMBER
+	 WHERE TM_ID = #tm_id#
+	   AND TM_PASS = #tm_pass#
+	   AND TM_AUTHOR != -1
+</select>
+
+<!-- 회원등급 확인 -->
+<select id="checkAuthor" parameterClass="String"  resultClass="int">
+SELECT TM_AUTHOR
+  FROM TM_MEMBER
+ WHERE TM_ID = #tm_id#
+</select>
+
+
+</sqlMap>
+
+
+
+

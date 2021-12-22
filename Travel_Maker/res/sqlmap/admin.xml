@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+   			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" 
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+			
+<!-- namespace 수정!!! -->
+<sqlMap namespace="admin">
+
+<!-- 불량 게시글 삭제 -->
+<delete id="spamDelete" parameterClass="boardVO">
+DELETE TM_BOARD
+ WHERE TM_CATEGORY_ID=#tm_category_id#
+   AND TM_B_NO=#tm_b_no#
+</delete>
+
+<!-- 불량 게시글 좋아요 삭제 -->
+<delete id="spamDeleteWithLike" parameterClass="boardVO">
+DELETE TM_BOARD_LIKE
+ WHERE TM_CATEGORY_ID=#tm_category_id#
+   AND TM_B_NO=#tm_b_no#
+</delete>
+
+
+<!-- 불량게시글수정 -->
+<update id="spamUpdate" parameterClass="boardVO">
+UPDATE TM_BOARD
+   SET TM_B_TITLE=#tm_b_title#,
+	   TM_B_CONTENT=#tm_b_content#
+ WHERE TM_CATEGORY_ID=#tm_category_id#
+   AND TM_B_NO=#tm_b_no#
+</update>
+
+<!-- 불량 게시글 조회 -->
+<select id="spamSelect" parameterClass="boardVO" resultClass="boardVO">
+SELECT *
+  FROM TM_BOARD
+ WHERE TM_B_NO=#tm_b_no#
+   AND TM_CATEGORY_ID=#tm_category_id#
+</select>
+
+<!-- 불량게시글 조회 -->
+<select id="spamAllList" resultClass="boardVO">
+ SELECT A.TM_LH_HATE AS TM_LH_HATE,
+        A.TM_B_NO AS TM_B_NO,
+        B.TM_CATEGORY_ID AS TM_CATEGORY_ID,
+        B.TM_ID AS TM_ID,
+        B.TM_B_TITLE AS TM_B_TITLE,
+        B.TM_B_CONTENT AS TM_B_CONTENT,
+        B.TM_B_DATE AS TM_B_DATE,
+        B.TM_B_HIT AS TM_B_HIT,
+        B.TM_BIMG_ID AS TM_BIMG_ID,
+        B.TM_B_MODATE AS TM_B_MODATE
+   FROM (SELECT COUNT(TM_LH_HATE) AS TM_LH_HATE,
+               TM_B_NO,
+               TM_CATEGORY_ID
+          FROM TM_BOARD_LIKE
+         GROUP BY TM_B_NO,TM_CATEGORY_ID) A,TM_BOARD B
+  WHERE A.TM_CATEGORY_ID=B.TM_CATEGORY_ID 
+    AND A.TM_B_NO = B.TM_B_NO
+   ORDER BY A.TM_LH_HATE DESC
+</select>
+
+
+<!-- 베스트 여행지 좋아요 순으로 정렬한 목록 조회 -->
+<select id="bestSortLike" resultClass="searchVO">
+SELECT * FROM(
+SELECT DISTINCT B.TM_SEARCH_ID AS TM_SEARCH_ID,
+       A.TM_SEARCH_LIKE AS TM_SEARCH_LIKE,
+       B.TM_SEARCH_NAME AS TM_SEARCH_NAME,
+       B.TM_SEARCH_CATE AS TM_SEARCH_CATE, 
+       B.TM_SEARCH_ADDR AS TM_SEARCH_ADDR,
+       B.TM_SEARCH_X AS TM_SEARCH_X,
+       B.TM_SEARCH_Y AS TM_SEARCH_Y,
+       B.TM_SEARCH_CON AS TM_SEARCH_CON,
+       B.TM_SEARCH_TEL AS TM_SEARCH_TEL,
+       B.TM_SEARCH_HIT AS TM_SEARCH_HIT,
+       B.IMG_ID AS IMG_ID
+  FROM (SELECT COUNT(TM_SEARCH_LIKE) AS TM_SEARCH_LIKE,
+               TM_SEARCH_ID
+          FROM TM_SEARCH_LIKE
+      GROUP BY TM_SEARCH_ID) A, TM_SEARCH B
+ WHERE A.TM_SEARCH_ID=B.TM_SEARCH_ID
+ ORDER BY TM_SEARCH_LIKE DESC)
+ WHERE ROWNUM &lt;=6
+</select>
+
+
+<!-- 유저 등급 확인 -->
+<select id="checkNotUser" parameterClass="String"  resultClass="int">
+SELECT TM_AUTHOR
+  FROM TM_MEMBER
+ WHERE TM_ID = #tm_id#
+</select>
+
+<!-- //////////////////////////////회원관리//////////////////////////// -->
+
+<!-- 전체 회원 수 -->
+<select id="memAllCount" resultClass="int">
+SELECT COUNT(*)
+  FROM TM_MEMBER
+</select>
+
+<!-- 전체 회원 조회 -->
+<select id="memAllList" parameterClass="pagingVO" resultClass="memVO">
+SELECT AA.*
+  FROM (SELECT ROWNUM RN, A.*
+  		  FROM (
+  		  		SELECT  TM_ID,
+						TM_PASS,
+						TM_NAME,
+						TM_TEL,
+						TM_ZIP,
+						TM_ADD1,
+						TM_ADD2,
+						TM_EMAIL,
+						TM_BIR,
+						TM_DISS,
+						TO_CHAR(TM_DATE,'YYYY-MM-DD') AS TM_DATE,
+						TM_AUTHOR
+				  FROM TM_MEMBER) A ) AA
+ WHERE AA.RN BETWEEN #firstRecNo# AND #lastRecNo#
+
+</select>
+
+<!-- 회원 정보 조회 -->
+<select id="memSelect" parameterClass="String" resultClass="memVO">
+SELECT TM_ID,
+		TM_PASS,
+		TM_NAME,
+		TM_TEL,
+		TM_ZIP,
+		TM_ADD1,
+		TM_ADD2,
+		TM_EMAIL,
+		TO_CHAR(TM_BIR,'YYYY-MM-DD') AS TM_BIR,
+		TM_DISS,
+		TO_CHAR(TM_DATE,'YYYY-MM-DD') AS TM_DATE,
+		TM_AUTHOR
+  FROM TM_MEMBER
+ WHERE TM_ID=#tm_id#
+</select>
+
+<!-- 회원 검색 -->
+<resultMap class="memVO" id="memberMap">
+	<result property="tm_id" column="TM_ID"/>
+	<result property="tm_name" column="TM_NAME"/>
+	<result property="tm_diss" column="TM_DISS"/>
+</resultMap> 
+
+<select id="memSearch" resultClass="memVO" parameterClass="memVO">
+SELECT AA.*
+  FROM (SELECT ROWNUM RN, A.*
+  		  FROM (
+  		  		SELECT  TM_ID,
+						TM_PASS,
+						TM_NAME,
+						TM_TEL,
+						TM_ZIP,
+						TM_ADD1,
+						TM_ADD2,
+						TM_EMAIL,
+						TM_BIR,
+						TM_DISS,
+						TO_CHAR(TM_DATE,'YYYY-MM-DD') AS TM_DATE,
+						TM_AUTHOR
+				  FROM TM_MEMBER) A ) AA
+ WHERE AA.RN BETWEEN #pagingvo.firstRecNo# AND #pagingvo.lastRecNo#
+
+ <isNotEmpty property="tm_id">AND TM_ID LIKE '%' || #tm_id# || '%'</isNotEmpty>
+ <isNotEmpty property="tm_name">AND TM_NAME LIKE '%' || #tm_name# || '%'</isNotEmpty>
+ <isNotEmpty property="tm_diss">AND TM_DISS LIKE '%' || #tm_diss# || '%'</isNotEmpty>
+ 
+</select>
+
+<select id="memSearchCount" resultClass="int" parameterClass="memVO">
+SELECT COUNT(*)
+  FROM TM_MEMBER
+WHERE 1==1
+
+ <isNotEmpty property="tm_id">AND TM_ID LIKE '%' || #tm_id# || '%'</isNotEmpty>
+ <isNotEmpty property="tm_name">AND TM_NAME LIKE '%' || #tm_name# || '%'</isNotEmpty>
+ <isNotEmpty property="tm_diss">AND TM_DISS LIKE '%' || #tm_diss# || '%'</isNotEmpty>  
+</select>
+
+
+<!-- 회원 정보 수정 -->
+<update id="memUpdate" parameterClass="memVO">
+UPDATE TM_MEMBER
+   SET TM_NAME=#tm_name#,
+   	   TM_TEL=#tm_tel#,
+   	   TM_ZIP=#tm_zip#,
+   	   TM_ADD1=#tm_add1#,
+   	   TM_ADD2=#tm_add2#,
+   	   TM_EMAIL=#tm_email#
+ WHERE TM_ID=#tm_id#
+</update>
+
+<!-- 회원 강제 탈퇴 >> 정보삭제하지않고 TM_DISS를 O으로 변경-->
+<update id="memDelete" parameterClass="String">
+UPDATE TM_MEMBER
+   SET TM_DISS='O',
+	   TM_AUTHOR = -1
+ WHERE TM_ID=#tm_id#
+</update>
+
+
+<!-- //////////////////////////////회원관리 끝//////////////////////////// -->
+
+
+
+
+
+<!-- //////////////////////////////공지사항//////////////////////////// -->
+
+<!-- 페이지 별 리스트 -->
+ <select id="selectByPage" resultClass="boardVO" parameterClass="pagingVO">
+SELECT AA.*
+  FROM (SELECT ROWNUM RN, A.*
+  		  FROM (
+  		  		SELECT TM_B_NO,
+						TM_CATEGORY_ID,
+						TM_ID,
+						TM_B_TITLE,
+						TM_B_CONTENT,
+						TM_B_OX,
+						TO_CHAR(TM_B_DATE,'YYYY-MM-DD') AS TM_B_DATE,
+						TM_B_HIT,
+						TM_BIMG_ID,
+						TO_CHAR(TM_B_MODATE,'YYYY-MM-DD') AS TM_B_MODATE
+		          FROM TM_BOARD
+		         WHERE TM_CATEGORY_ID=999
+		         ORDER BY TM_B_NO DESC) A ) AA
+ WHERE AA.RN BETWEEN #firstRecNo# AND #lastRecNo#
+ </select>
+
+<!-- 공지사항 글 개수 -->
+<select id="noticeAllCount" resultClass="int">
+SELECT COUNT(*)
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=999
+</select>
+
+<!-- 공지사항 글 조회수 -->
+<update id="noticeHitUpdate">
+UPDATE TM_BOARD
+   SET TM_B_HIT=TM_B_HIT+1
+ WHERE TM_CATEGORY_ID=999
+   AND TM_B_NO=#tm_b_no#
+</update>
+
+<!-- 공지사항 목록 -->
+<select id="noticeAllList" resultClass="boardVO">
+SELECT *
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=999
+</select>
+
+<!-- 공지사항 조회 -->
+<select id="noticeSelect" resultClass="boardVO">
+SELECT *
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=999
+   AND TM_B_NO=#tm_b_no#
+</select>
+ 
+<!-- 공지사항 글쓰기 -->
+<insert id="noticeInsert" parameterClass="boardVO">
+ INSERT INTO TM_BOARD(TM_B_NO,TM_CATEGORY_ID,TM_ID,TM_B_TITLE,TM_B_CONTENT,TM_B_OX,TM_B_DATE,TM_B_HIT)
+      VALUES ((SELECT NVL(MAX(TM_B_NO),0)+1 FROM TM_BOARD),999,#tm_id#,#tm_b_title#,#tm_b_content#,0,SYSDATE,0)
+</insert>
+
+<!-- 공지사항 수정 -->
+<update id="noticeUpdate" parameterClass="boardVO">
+ UPDATE TM_BOARD
+    SET TM_B_TITLE=#tm_b_title#,
+         TM_B_CONTENT=#tm_b_content#,
+         TM_B_MODATE=SYSDATE
+  WHERE TM_B_NO=#tm_b_no#
+    AND TM_CATEGORY_ID=999
+</update>
+
+<!-- 공지사항 삭제-->
+<delete id="noticeDelete" parameterClass="boardVO">
+ DELETE TM_BOARD
+  WHERE TM_B_NO=#tm_b_no#
+    AND TM_CATEGORY_ID=999
+</delete>
+
+<!-- 공지사항 글 개수 -->
+<select id="getAllNoticeCount" resultClass="int">
+SELECT COUNT(*) CNT
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=999
+</select>
+
+<!-- //////////////////////////////공지사항 끝//////////////////////////// -->
+
+
+
+
+
+
+<!-- //////////////////////////////1:1문의게시판//////////////////////////// -->
+
+<!-- 회원 검색 -->
+<select id="qnaSearch" resultClass="boardVO" parameterClass="memVO">
+SELECT AA.*
+  FROM (SELECT ROWNUM RN, A.*
+  		  FROM (
+  		  		SELECT  TM_B_NO,
+						TM_CATEGORY_ID,
+						TM_ID,
+						TM_B_TITLE,
+						TM_B_CONTENT,
+						TM_B_OX,
+						TO_CHAR(TM_B_DATE,'YYYY-MM-DD') AS TM_B_DATE,
+						TM_B_HIT,
+						TM_BIMG_ID,
+						TM_B_MODATE
+				  FROM TM_BOARD
+				 WHERE TM_CATEGORY_ID=998
+				 ORDER BY TM_B_OX) A ) AA
+ WHERE AA.RN BETWEEN #pagingvo.firstRecNo# AND #pagingvo.lastRecNo#
+ <isNotEmpty property="tm_id">AND TM_ID LIKE '%' || #tm_id# || '%'</isNotEmpty>
+</select>
+
+<select id="qnaSearchCount" resultClass="int" parameterClass="boardVO">
+SELECT COUNT(*)
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=998
+   AND 1=1
+ <isNotEmpty property="tm_id">AND TM_ID LIKE '%' || #tm_id# || '%'</isNotEmpty> 
+</select>
+
+
+
+<!-- 문의게시글 개수 -->
+<select id="qnaAllCount" resultClass="int">
+SELECT COUNT(*)
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=998
+</select>
+
+
+<!-- 답변대기중으로 정렬 + 페이징처리 -->
+<select id="qnaSort" parameterClass="pagingVO" resultClass="boardVO">
+ SELECT AA.*
+  FROM (SELECT ROWNUM RN, A.*
+  		  FROM (SELECT  TM_B_NO,
+						TM_CATEGORY_ID,
+						TM_ID,
+						TM_B_TITLE,
+						TM_B_CONTENT,
+						TM_B_OX,
+						TO_CHAR(TM_B_DATE,'YYYY-MM-DD') AS TM_B_DATE,
+						TM_B_HIT,
+						TM_BIMG_ID,
+						TM_B_MODATE
+				  FROM TM_BOARD
+				 WHERE TM_CATEGORY_ID=998
+				 ORDER BY TM_B_OX asc, TM_B_NO desc
+  		  		) A ) AA
+ WHERE AA.RN BETWEEN #firstRecNo# AND #lastRecNo#
+</select>
+
+
+<!-- 1:1 문의 게시판 목록 -->
+<select id="qnaAllList" resultClass="boardVO">
+SELECT  TM_B_NO,
+		TM_CATEGORY_ID,
+		TM_ID,
+		TM_B_TITLE,
+		TM_B_CONTENT,
+		TM_B_OX,
+		TO_CHAR(TM_B_DATE,'YYYY-MM-DD') AS TM_B_DATE,
+		TM_B_HIT,
+		TM_BIMG_ID,
+		TM_B_MODATE
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=998
+ ORDER BY TM_B_NO desc
+</select>
+
+<!-- 1:1 문의 게시판 조회 -->
+<select id="qnaSelect" parameterClass="int" resultClass="boardVO">
+SELECT TM_B_NO,
+		TM_CATEGORY_ID,
+		TM_ID,
+		TM_B_TITLE,
+		TM_B_CONTENT,
+		TM_B_OX,
+		TO_CHAR(TM_B_DATE,'YYYY-MM-DD') AS TM_B_DATE,
+		TM_B_HIT,
+		TM_BIMG_ID,
+		TM_B_MODATE
+  FROM TM_BOARD
+ WHERE TM_CATEGORY_ID=998
+   AND TM_B_NO=#tm_b_no#
+</select>
+
+<!-- 1:1 문의 게시판 글 수정 -->
+<update id="qnaUpdate" parameterClass="boardVO">
+UPDATE TM_BOARD
+   SET TM_B_TITLE=#tm_b_title#,
+   		TM_B_CONTENT=#tm_b_content#,
+        TM_B_MODATE=SYSDATE
+ WHERE TM_B_NO=#tm_b_no#
+   AND TM_CATEGORY_ID=998
+</update>
+
+<!-- 1:1 문의 게시판 글 삭제 -->
+<delete id="qnaDelete" parameterClass="boardVO">
+DELETE TM_BOARD
+ WHERE TM_B_NO=#tm_b_no#
+   AND TM_CATEGORY_ID=998
+</delete>
+
+<!-- 1:1 문의게시판 글 삭제 전에 댓글 삭제 -->
+<delete id="qnaReDelWith" parameterClass="int">
+DELETE TM_B_COMMENT
+ WHERE TM_B_NO=#tm_b_no#
+</delete>
+
+<!-- 1:1 문의 게시판 답변 조회 -->
+<select id="qnaReSelect" parameterClass="int" resultClass="replyVO">
+SELECT *
+  FROM TM_B_COMMENT
+ WHERE TM_B_NO=#tm_b_no#
+   AND TM_CATEGORY_ID=998
+</select>
+
+<!-- 1:1 문의 게시판 답변 등록 -->
+<insert id="qnaReInsert" parameterClass="replyVO">
+INSERT INTO TM_B_COMMENT(TM_BC_NO,TM_ID,TM_B_NO,TM_CATEGORY_ID,TM_BC_WRITER,TM_BC_CONTENT,TM_BC_DATE)
+     VALUES ((SELECT NVL(MAX(TM_BC_NO),0)+1 FROM TM_B_COMMENT),#tm_id#,#tm_b_no#,998,#tm_bc_writer#,#tm_bc_content#,SYSDATE)
+</insert>
+
+<!-- 문의게시판 답변 등록 시 답변여부 수정 -->
+<update id="qnaReOxUpdate" parameterClass="int">
+UPDATE TM_BOARD
+   SET TM_B_OX=1
+ WHERE TM_CATEGORY_ID=998
+   AND TM_B_NO=#tm_b_no#
+</update>
+
+<!-- 1:1 문의 게시판 답변 수정 -->
+<update id="replyUpdate" parameterClass="replyVO">
+UPDATE TM_B_COMMENT
+   SET TM_BC_CONTENT=#tm_bc_content#,
+		TM_BC_MODATE=SYSDATE
+ WHERE TM_BC_NO=#tm_bc_no#
+   AND TM_CATEGORY_ID=998
+   AND TM_B_NO=#tm_b_no#
+</update>
+
+<!-- 1:1 문의 게시판 답변 삭제 -->
+<delete id="qnaReDelete" parameterClass="replyVO">
+DELETE TM_B_COMMENT
+ WHERE TM_BC_NO=#tm_bc_no#
+   AND TM_CATEGORY_ID=998
+</delete>
+
+<!-- 삭제 시 답변 여부 변경 -->
+<update id="qnaReOxDel" parameterClass="int">
+UPDATE TM_BOARD
+   SET TM_B_OX=0
+ WHERE TM_CATEGORY_ID=998
+   AND TM_B_NO=#tm_b_no#
+</update>
+
+<select id="qnaReCount" parameterClass="int" resultClass="int">
+SELECT COUNT(*) CNT
+  FROM TM_B_COMMENT
+ WHERE TM_CATEGORY_ID=998
+   AND TM_B_NO=#tm_b_no#
+</select>
+
+
+<!-- //////////////////////////////1:1문의게시판 끝//////////////////////////// -->
+
+</sqlMap>

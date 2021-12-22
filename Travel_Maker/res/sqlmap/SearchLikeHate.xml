@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="searchlikehate">
+
+					
+		<!-- 좋아요 추가 -->
+	<update id="addSearchLike" parameterClass="SearchLikeHateVO">
+	insert into TM_SEARCH_LIKE(
+		TM_SEARCH_NO, 
+		TM_SEARCH_LIKE, 
+		TM_SEARCH_HATE, 
+		TM_ID, 
+		TM_SEARCH_ID
+	)
+	
+	values(
+		(select NVL(max(TM_SEARCH_NO),0)+1 from TM_SEARCH_LIKE),
+		1,
+		0,
+		#tm_id#,
+		#tm_search_id#
+	)
+	</update>
+	
+	
+	
+		<!-- 좋아요 취소 -->
+	<update id="cancelSearchLike" parameterClass="SearchLikeHateVO">
+	delete TM_SEARCH_LIKE where TM_ID =  #tm_id# and TM_SEARCH_ID = #tm_search_id# 
+	</update>
+	
+	
+
+	
+	
+		<!-- 좋아요 개수 조회 -->
+	<select id="getSearchLikeCount" parameterClass="SearchLikeHateVO" resultClass="int">
+	select count(*) from TM_SEARCH_LIKE where TM_SEARCH_ID = #tm_search_id# and TM_SEARCH_LIKE = 1
+	</select>
+
+	
+	
+	
+	
+		<!-- 좋아요 여부 조회 -->
+	<select id="chkSearchLike" parameterClass="SearchLikeHateVO" resultClass="int">
+	select count(*) from TM_SEARCH_LIKE where TM_SEARCH_ID = #tm_search_id# and TM_ID = #tm_id# and TM_SEARCH_LIKE = 1
+	</select>
+	
+
+	
+</sqlMap>

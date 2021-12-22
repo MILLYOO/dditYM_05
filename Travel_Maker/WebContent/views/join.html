@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link
+	href="https://fonts.googleapis.com/css2?family=Do+Hyeon&display=swap"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script
+	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="../js/jquery.serializejson.min.js"></script>
+<script
+	src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<link rel="stylesheet" type="text/css" href="../page/css/default.css">
+<link rel="stylesheet" type="text/css" href="../page/css/style2.css">
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#header").load("MainHeader.jsp")
+		$("#footers").load("footer.html")
+	});
+</script>
+<style type="text/css">
+h1 {
+	margin: 20px 20px 20px 20px;
+	text-align: center;
+	font-family: 'Do Hyeon', sans-serif;
+}
+.row{
+	display: flex;
+}
+.modal-title {
+	text-align: center;
+}
+
+#pagelist {
+	width: 200px;
+}
+
+.page-link {
+	width: 50px;
+}
+
+.pager, .pagination {
+	width: 100px;
+	float: left;
+}
+
+.card-body {
+	-ms-flex: 1 1 auto;
+	flex: 1 1 auto;
+	min-height: 1px;
+	padding: 1.25rem;
+}
+
+.card {
+	border: none;
+	margin-bottom: 24px;
+	-webkit-box-shadow: 0 0 13px 0 rgba(236, 236, 241, .44);
+	box-shadow: 0 0 13px 0 rgba(236, 236, 241, .44);
+}
+
+.avatar-xs {
+	height: 2.3rem;
+	width: 2.3rem;
+}
+</style>
+<script>
+// 	var memChk = 0;
+   $(function() {
+	   
+	  idreg = /^[a-z][a-zA-Z0-9]{4,11}$/ 
+		
+   	   $('#id').on('keyup', function() {
+			aa = $(this).val();
+			
+			if(!(idreg.test(aa))){
+				$(this).css('border', '1px solid red');//틀리면 빨강
+// 				memChk = false;
+				return false;
+			}
+			$(this).css('border', '1px solid blue'); //맞으면 파랑
+			
+		})
+	   $('#chkid').on('click', function() {
+		   
+		//입력한 아이디 값을 가져온다.
+		idvalue = $('#id').val().trim();
+		if(!(idreg.test(idvalue))){
+			alert("아이디를 영문으로 시작하며 숫자와 조합된 5~12글자로 작성해주세요")
+// 			memChk = false;
+			return false;
+		}
+		//공백체크 
+		if(idvalue.length < 1){
+			alert("아이디를 입력하세요");
+// 			memChk = false;
+			return false;
+		}
+		
+		$.ajax({
+			url : "/Travel_Maker/CheckID.do", //module path를 앞에 써줘야 됨
+			method : 'get',
+			data : {'id' : idvalue},
+			success : function(res) {
+				
+				$('#spid').html(res.sw)
+				
+				if(res.flag == "ok"){
+					$('#spid').css('color', 'blue');
+				}else{
+					$('#spid').css('color', 'red');
+// 					memChk = false;
+				}
+		
+			},
+			dataType : 'json'
+			
+		})
+	})
+	
+	//비밀번호 재확인
+	$('#alert-success').hide();
+	$('#alert-danger').hide();
+	$("input").keyup(function() {
+		var pwd1 = $('#pwd1').val();
+		var pwd2 = $('#pwd2').val();
+		if(pwd1 != "" || pwd2 != ""){
+			if(pwd1 == pwd2){
+				$("#alert-success").show();
+				$("#alert-danger").hide();
+				$("#submit").removeAttr("disabled");
+			}else{
+				$("#alert-success").hide();
+				$("#alert-danger").show();
+				$("#submit").attr("disabled", "disabled");
+// 				memChk = false;
+			}
+		}
+	})
+	
+	//이름 정규표현식	   
+	  namereg = /^[가-힣]{2,6}$/
+	   	   $('#name').on('keyup', function() {
+				bb = $(this).val();
+				
+				if(!(namereg.test(bb))){
+					$(this).css('border', '1px solid red');//틀리면 빨강
+// 					memChk = false;
+					return false;
+				}
+				$(this).css('border', '1px solid blue'); //맞으면 파랑
+			})
+			
+	//이메일 정규표현식
+	mailreg = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/
+	   	   $('#email').on('keyup', function() {
+				cc = $(this).val();
+				
+				if(!(mailreg.test(cc))){
+					$(this).css('border', '1px solid red');//틀리면 빨강
+// 					memChk = false;
+					return false;
+				}
+				$(this).css('border', '1px solid blue'); //맞으면 파랑
+			})
+	
+			
+ //전화번호 정규표현식 -- 자동으로 하이픈 입력해준다.
+ function autoHypenTel(str) {
+  str = str.replace(/[^0-9]/g, '');
+  var tmp = '';
+
+    // 핸드폰 및 다른 지역 전화번호 일 경우
+    if (str.length < 4) {
+      return str;
+    } else if (str.length < 7) {
+      tmp += str.substr(0, 3);
+      tmp += '-';
+      tmp += str.substr(3);
+      return tmp;
+    } else if (str.length < 11) {
+      tmp += str.substr(0, 3);
+      tmp += '-';
+      tmp += str.substr(3, 3);
+      tmp += '-';
+      tmp += str.substr(6);
+      return tmp;
+    } else {
+      tmp += str.substr(0, 3);
+      tmp += '-';
+      tmp += str.substr(3, 4);
+      tmp += '-';
+      tmp += str.substr(7);
+      return tmp;
+    }
+
+  return str;
+}
+	
+	$('#telInput').keyup(function (event) {
+		  event = event || window.event;
+		  var _val = this.value.trim();
+		  this.value = autoHypenTel(_val);
+		});
+
+
+	//전송
+	$('#send').on('click', function() {
+// 		if(memChk == false){
+// 			alert("잘못된 입력이 있습니다.");
+//			return false;
+// 		}
+		
+		$.ajax({  
+			url : '/Travel_Maker/JoinSend.do', 
+			type : 'post', 
+			data : $('form').serializeJSON(), 
+			success : function(res) { 
+				$('#spansend').html(res.msg)
+				
+				if(res.flag == "ok"){
+					$('#spansend').css('color', 'blue');
+					location.href="/Travel_Maker/views/home.html";
+				}else{
+					$('#spansend').css('color', 'red');
+				}
+			},
+ 			dataType : 'json' 
+		})
+	})
+	
+//전체 form에서 공백확인	
+	$('#send').on('click', function() {
+		//입력한 아이디 값을 가져온다.
+		formvalue = $('.form-control').val().trim();
+		
+		//공백체크 
+		if(formvalue.length < 1){
+			alert("빈칸이 존재합니다. 빈칸을 확인해주세요");
+			return false;
+		}
+	}) 
+})	
+
+function Zip() {
+	    new daum.Postcode({
+	    	oncomplete: function(data) {
+            // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+
+            // 도로명 주소의 노출 규칙에 따라 주소를 표시한다.
+            // 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
+            var roadAddr = data.roadAddress; // 도로명 주소 변수
+            var extraRoadAddr = ''; // 참고 항목 변수
+
+            // 법정동명이 있을 경우 추가한다. (법정리는 제외)
+            // 법정동의 경우 마지막 문자가 "동/로/가"로 끝난다.
+            if(data.bname !== '' && /[동|로|가]$/g.test(data.bname)){
+                extraRoadAddr += data.bname;
+            }
+            // 건물명이 있고, 공동주택일 경우 추가한다.
+            if(data.buildingName !== '' && data.apartment === 'Y'){
+               extraRoadAddr += (extraRoadAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+            }
+            // 표시할 참고항목이 있을 경우, 괄호까지 추가한 최종 문자열을 만든다.
+            if(extraRoadAddr !== ''){
+                extraRoadAddr = ' (' + extraRoadAddr + ')';
+            }
+
+            // 우편번호와 주소 정보를 해당 필드에 넣는다.
+            document.getElementById('sample4_postcode').value = data.zonecode;
+            document.getElementById("sample4_roadAddress").value = roadAddr;
+            document.getElementById("sample4_jibunAddress").value = data.jibunAddress;
+            
+            // 참고항목 문자열이 있을 경우 해당 필드에 넣는다.
+            if(roadAddr !== ''){
+                document.getElementById("sample4_extraAddress").value = extraRoadAddr;
+            } else {
+                document.getElementById("sample4_extraAddress").value = '';
+            }
+
+            var guideTextBox = document.getElementById("guide");
+            // 사용자가 '선택 안함'을 클릭한 경우, 예상 주소라는 표시를 해준다.
+            if(data.autoRoadAddress) {
+                var expRoadAddr = data.autoRoadAddress + extraRoadAddr;
+                guideTextBox.innerHTML = '(예상 도로명 주소 : ' + expRoadAddr + ')';
+                guideTextBox.style.display = 'block';
+
+            } else if(data.autoJibunAddress) {
+                var expJibunAddr = data.autoJibunAddress;
+                guideTextBox.innerHTML = '(예상 지번 주소 : ' + expJibunAddr + ')';
+                guideTextBox.style.display = 'block';
+            } else {
+                guideTextBox.innerHTML = '';
+                guideTextBox.style.display = 'none';
+            }
+        }
+    }).open();
+}
+
+   
+/*   function Zip() {
+	   window.open("zip.html", "우편번호찾기", "width=500 height=500");
+}  */ 
+
+</script>
+</head>
+<body>
+	<div id="header"></div>
+	<div class="container">
+		<br> <br>
+		<div id="result1">
+			<!--          <div class="container"> -->
+			<div class="row">
+				<h1>회원가입</h1>
+			</div>
+			<form class="form-horizontal">
+				<div class="card">
+					<div class="card-body">
+						<div class="form-group">
+							<label class="control-label col-lg-2" for="id">아이디:</label>
+							<div class="col-sm-3">
+								<input type="text" class="form-control" id="id"
+									placeholder="아이디" name="tm_id"> <a
+									style="font-size: 0.8em;">아이디 입력 후 중복검사를 눌러주세요</a>
+							</div>
+							<button id="chkid" type="button" class="btn btn-success btn-sm">id중복검사</button>
+							<span id="spid"></span>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="pwd">비밀번호:</label>
+							<div class="col-sm-3">
+								<input type="password" class="form-control" id="pwd1"
+									placeholder="비밀번호" name="tm_pass">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="pwd">비밀번호 확인:</label>
+							<div class="col-sm-3">
+								<input type="password" class="form-control" id="pwd2"
+									placeholder="비밀번호 확인" name="tm_pass"><br>
+								<div class="alert-success" id="alert-success">비밀번호가 일치합니다</div>
+								<div class="alert-danger" id="alert-danger">비밀번호가 일치하지
+									않습니다</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="name">이름:</label>
+							<div class="col-sm-3">
+								<input type="text" class="form-control" id="name"
+									placeholder="이름" name="tm_name">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="email">Email:</label>
+							<div class="col-sm-3">
+								<input type="email" class="form-control" id="email"
+									placeholder="이메일" name="tm_email">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="hp">핸드폰번호:</label>
+							<div class="col-sm-3">
+								<input type="tel" class="form-control m-input" name="tm_tel"
+									id="telInput" required pattern="[0-9]{2,3}-[0-9]{3,4}-[0-9]{4}"
+									maxlength="13" placeholder="예) 010-1234-5678" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="bir">생년월일:</label>
+							<div class="col-sm-3">
+								<input type="date" class="form-control" id="bir"
+									placeholder="생년월일" name="tm_bir">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="zip">우편번호:</label>
+							<div class="col-sm-3">
+								<input type="text" class="form-control" id="sample4_postcode"
+									name="tm_zip" placeholder="우편번호" readonly>
+							</div>
+							<button type="button" class="btn btn-success btn-sm"
+								onclick="Zip()" id="zip">우편번호 찾기</button>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="doro">도로명주소:</label>
+							<div class="col-sm-5">
+								<input type="text" class="form-control" id="sample4_roadAddress"
+									name="tm_add1" placeholder="도로명주소" readonly>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="jibun">지번주소:</label>
+							<div class="col-sm-5">
+								<input type="text" class="form-control"
+									id="sample4_jibunAddress" placeholder="지번주소" disabled>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="extra">참고항목:</label>
+							<div class="col-sm-5">
+								<input type="text" class="form-control"
+									id="sample4_extraAddress" placeholder="참고항목" disabled>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="jibun">상세주소:</label>
+							<div class="col-sm-5">
+								<input type="text" class="form-control"
+									id="sample4_detailAddress" name="tm_add2" placeholder="상세주소">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-2" for="auth"></label>
+							<div class="col-sm-3">
+								<input type="hidden" class="form-control" id="auth"
+									name="tm_author">
+							</div>
+						</div>
+						<span id="guide" style="color: red; display: none"></span>
+						<div class="form-group">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button id="send" type="button" class="btn btn-primary btn-sm">전송</button>
+								<span id="spansend"></span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+			<!--          </div> -->
+		</div>
+	</div>
+	</div>
+	<div id="footers"></div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+			
+<sqlMap namespace="join">
+
+<!-- 전체 리스트 -->
+  <select id="selectAll" resultClass="memVO"> <!-- resultclass는 이제 서비스로 빼낼 때 내뱉는 값 -->
+    select * from tm_member
+  </select>
+  
+<!-- id 중복검사 -->
+  <select id="searchId" resultClass="string" parameterClass="string">
+    select tm_id from tm_member where tm_id= #data# 
+  </select>
+
+<!-- 가입 저장 -->
+  <insert id="insertMember" parameterClass="memVO">
+    insert into tm_member values(
+    		#tm_id#,
+			#tm_pass#,
+			#tm_name#,
+			#tm_tel#,
+			#tm_zip#,
+			#tm_add1#,
+			#tm_add2#,
+			#tm_email#,
+			#tm_bir#,
+			null,
+			sysdate,
+			#tm_author#
+   	)
+   	<selectKey keyProperty="tm_id" resultClass="string">
+   	  select tm_id from tm_member where tm_id=#tm_id#
+   	</selectKey>
+  </insert>
+   	
+</sqlMap>

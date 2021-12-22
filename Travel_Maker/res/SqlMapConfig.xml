@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMapConfig
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+	<properties resource="SqlMapConfig.properties" />
+
+	<settings cacheModelsEnabled="true" enhancementEnabled="true"
+		lazyLoadingEnabled="true" maxRequests="32" maxSessions="10"
+		maxTransactions="5" useStatementNamespaces="true" />
+		
+<!-- alias 추가 -->
+	<typeAlias alias="pagingVO" type="tm.comm.vo.PagingVO"/>
+	<typeAlias alias="memVO" type="tm.member.vo.MemberVO"/>
+	<typeAlias alias="blackVO" type="tm.black.vo.BlackMemVO"/>
+	<typeAlias alias="boardVO" type="tm.comm.vo.BoardVO"/>
+	<typeAlias alias="searchVO" type="tm.search.vo.SearchVO"/>
+	<typeAlias alias="replyVO" type="tm.comm.vo.ReplyVO"/>
+	<typeAlias alias="scrapVO" type="tm.search.vo.ScrapVO"/>
+	<typeAlias alias="imgVO" type="tm.comm.vo.ImgVO"/>
+	<typeAlias alias="LikeHateVO" type="tm.comm.vo.LikeHateVO"/>
+	<typeAlias alias="SearchLikeHateVO" type="tm.comm.vo.SearchLikeHateVO"/>
+	<typeAlias alias="myscrabVO" type="tm.scrab.vo.ScrabVO"/>
+	<typeAlias alias="planDetailVO" type="tm.plan.vo.planDetailVO"/>
+	<typeAlias alias="prodVO" type="tm.comm.vo.ProdVO"/>
+	<typeAlias alias="planVO" type="tm.plan.vo.planVO"/>
+	<typeAlias alias="cartVO" type="tm.comm.vo.CartVO"/>
+	<typeAlias alias="podVO" type="tm.comm.vo.PodVO"/>
+	<typeAlias alias="buyVO" type="tm.comm.vo.BuyVO"/>
+
+	
+	<transactionManager type="JDBC">
+		<dataSource type="SIMPLE">
+			<property name="JDBC.Driver" value="${driver}" />
+			<property name="JDBC.ConnectionURL" value="${url}" />
+			<property name="JDBC.Username" value="${username}" />
+			<property name="JDBC.Password" value="${password}" />
+			<property name="Pool.MaximumActiveConnections" value="1"/>
+			<property name="Pool.MaximumIdleConnections" value="1"/>
+		</dataSource>
+	</transactionManager>
+<!-- 	resource추가 -->
+	<sqlMap resource="sqlmap/member.xml"/>
+	<sqlMap resource="sqlmap/blackmem.xml"/>
+	<sqlMap resource="sqlmap/join.xml"/>
+	<sqlMap resource="sqlmap/search.xml"/>
+	<sqlMap resource="sqlmap/freeboard.xml"/>
+	<sqlMap resource="sqlmap/userqboard.xml"/>
+	<sqlMap resource="sqlmap/admin.xml"/>
+	<sqlMap resource="sqlmap/privQnA.xml"/>
+	<sqlMap resource="sqlmap/MyInfo.xml"/>
+	<sqlMap resource="sqlmap/TravelBoard.xml"/>
+	<sqlMap resource="sqlmap/Img.xml"/>
+	<sqlMap resource="sqlmap/SearchLikeHate.xml"/>
+	<sqlMap resource="sqlmap/LikeHate.xml"/>
+	<sqlMap resource="sqlmap/Plan.xml"/>
+	<sqlMap resource="sqlmap/ticket.xml"/>
+	<sqlMap resource="sqlmap/scrab.xml"/>
+	
+</sqlMapConfig>

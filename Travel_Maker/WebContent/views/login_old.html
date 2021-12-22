@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+  <script src="../js/jquery-3.6.0.min.js"></script>
+  <script src="../js/find.js"></script>
+
+<script>
+
+$(function(){
+	
+	$('#fid').on('click',function(){
+		window.open("findId.html","ID찾기","width=500 height=500");
+	})
+	
+	$('#fpw').on('click',function(){
+		window.open("findPw.html","PW찾기","width=500 height=500")
+	})
+		
+})
+
+
+function goJoin() {
+		location.href="/Travel_Maker/views/join.html";
+		
+	}
+
+</script>
+
+</head>
+<body>
+ 	<div>
+ 		<table>
+	 		<form method="post" action="/Travel_Maker/login.do">
+	 			<tr>
+					<td colspan="2"><input type="text" id="login_id" name="tm_id" placeholder="아이디"></td>
+		 		</tr>
+		 		<tr>
+		 			<td colspan="2"><input type="password" id="login_pass" name="tm_pass" placeholder="비밀번호"></td>
+		 		</tr>
+		 		<tr>
+		 			<td><input type="submit" id="login_button" value="로그인"></td>
+		 			<td><input type="button" id="join_button" value="회원가입" onclick="goJoin()"></td>
+	 			</tr>
+	 		 </form>
+	 		 	<tr>
+	 		 		<td><input type="button" value="ID찾기" id="fid" class="find"></td>
+ 					<td><input type="button" value="PW찾기" id="fpw" class="find"></td>
+	 		 	</tr>
+ 		</table>
+ 	</div>
+
+
+</body>
+</html>

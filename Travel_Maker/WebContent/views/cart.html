@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script
+	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="../js/jquery.serializejson.min.js"></script>
+<link
+	href="https://fonts.googleapis.com/css2?family=Do+Hyeon&display=swap"
+	rel="stylesheet">
+<script
+	src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<link rel="stylesheet" type="text/css" href="../page/css/default.css">
+<link rel="stylesheet" type="text/css" href="../page/css/style2.css">
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#footers").load("footer.html")
+		$("#header").load("MainHeader.jsp")
+	});
+</script>
+<style type="text/css">
+.row {
+	margin-right: -15px;
+	margin-left: -15px;
+	display: -ms-flexbox;
+	display: flex;
+	-ms-flex-wrap: wrap;
+	flex-wrap: wrap;
+	margin-right: -15px;
+	margin-left: -15px;
+}
+
+h1 {
+	margin: 20px 20px 20px 20px;
+	text-align: center;
+}
+
+body {
+	font-family: 'Do Hyeon', sans-serif;
+}
+
+.modal-title {
+	text-align: center;
+}
+
+#pagelist {
+	width: 200px;
+}
+
+.page-link {
+	width: 50px;
+}
+
+.pager, .pagination {
+	width: 100px;
+	float: left;
+}
+
+.card-body {
+	-ms-flex: 1 1 auto;
+	flex: 1 1 auto;
+	min-height: 1px;
+	padding: 1.25rem;
+	color: black;
+}
+
+.card {
+	border: none;
+	margin-bottom: 24px;
+	-webkit-box-shadow: 0 0 13px 0 rgba(236, 236, 241, .44);
+	box-shadow: 0 0 13px 0 rgba(236, 236, 241, .44);
+}
+
+.avatar-xs {
+	height: 2.3rem;
+	width: 2.3rem;
+}
+</style>
+<title>매출 관리</title>
+</head>
+<body>
+	<div id="header"></div>
+	<div class="container">
+		<div class="row">
+			<h1>장바구니</h1>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<form>
+
+					<table border=1>
+						<tr>
+							<th>품목</th>
+							<th>가격</th>
+							<th>수량</th>
+							<th>합계</th>
+						</tr>
+
+						<tr>
+							<td>컴퓨터세트</td>
+							<td>2,000,000원</td>
+							<td><input type="number" min='0' value='0' step='1'></td>
+							<td><textarea>0</textarea></td>
+						</tr>
+
+						<tr>
+							<td>티셔츠</td>
+							<td>50,000원</td>
+							<td><input type="number" min='0' value='0' step='1'></td>
+							<td><textarea>0</textarea></td>
+						</tr>
+
+						<tr>
+							<td>음악파일</td>
+							<td>1,000원</td>
+							<td><input type="number" min='0' value='0' step='1'></td>
+							<td><textarea>0</textarea></td>
+						</tr>
+
+						<tr>
+							<td>영화파일</td>
+							<td>5,000원</td>
+							<td><input type="number" min='0' value='0' step='1'></td>
+							<td><textarea>0</textarea></td>
+						</tr>
+					</table>
+					<div class="write">
+					<input class="btn btn-primary" type="button" value="계산">&nbsp;
+					<input class="btn btn-primary" type="button" value="구매">&nbsp;
+					<input class="btn btn-primary" type="reset" value="초기화">&nbsp;
+					<br>
+					</div>
+			</div>
+		</div>
+		</form>
+	</div>
+	<div id="footers"></div>
+</body>
+</html>

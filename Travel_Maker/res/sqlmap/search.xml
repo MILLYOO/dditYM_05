@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+			PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+			"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="search">
+
+<update id="setInfo" parameterClass="searchVO">
+		insert into tm_search values(
+			TO_CHAR((select NVL(max(tm_search_id),0)+1 from tm_search), 'FM0000'), #tm_search_cate#, #tm_search_name#,
+			#tm_search_addr#, #tm_search_x#,
+			#tm_search_y#, #tm_search_con#, #tm_search_tel#,
+			#tm_search_hit#, #img_id#)
+	</update>
+<!-- defalt -> #img_id# -->
+ 	<select id="searchInfo" parameterClass="String" resultClass = "searchVO">
+ 		 	select tm_search_id,
+                   tm_search_cate,
+                   tm_search_name,
+                   tm_search_addr,
+                   tm_search_x,
+                   tm_search_y,
+                   tm_search_con,
+                   tm_search_tel,
+                   tm_search_hit,
+                   img_id
+              from tm_search
+              where tm_search_addr like '%' || #key# || '%'
+ 	</select>
+
+	<select id="searchInfo2" parameterClass="String" resultClass = "searchVO">
+ 		 	select tm_search_id,
+                   tm_search_cate,
+                   tm_search_name,
+                   tm_search_addr,
+                   tm_search_x,
+                   tm_search_y,
+                   tm_search_con,
+                   tm_search_tel,
+                   tm_search_hit,
+                   img_id
+              from tm_search
+              where tm_search_id = #tm_search_id# 
+ 	</select>
+ 	
+	<select id="allInfo" resultClass="searchVO">
+		    select tm_search_id,
+                   tm_search_cate,
+                   tm_search_name,
+                   tm_search_addr,
+                   tm_search_x,
+                   tm_search_y,
+                   tm_search_con,
+                   tm_search_tel,
+                   tm_search_hit,
+                   img_id
+              from tm_search order by 1
+	</select>
+	
+	<update id="updateInfo" parameterClass="searchVO">
+		update tm_search set tm_search_addr = #tm_search_addr#,
+							 tm_search_cate = #tm_search_cate#,
+							 tm_search_con = #tm_search_con#,
+							 tm_search_name = #tm_search_name#,
+							 tm_search_x = #tm_search_x#,
+							 tm_search_y = #tm_search_y#,
+						     tm_search_tel = #tm_search_tel#
+		 where tm_search_id = #tm_search_id#
+	</update>
+	
+	<delete id="deleteInfo">
+		delete from tm_search where tm_search_id = #tm_search_id# 
+	</delete>
+
+	<update id="insertScrap" parameterClass="ScrapVO">
+	insert into TM_SCRAB values(
+				TO_CHAR((select NVL(max(tm_scrab_id),0)+1 from tm_scrab), 'FM0000'), #tm_search_id#, #tm_id#)
+	</update>
+	
+	<update id="deleteScrap" parameterClass="ScrapVO">
+	delete from TM_SCRAB where tm_id = #tm_id# and tm_search_id = #tm_search_id#
+	</update>
+	
+	<select id="checkScrap" parameterClass="ScrapVO" resultClass="int">
+	select nvl(count(*),0) from TM_SCRAB where TM_ID = #tm_id# and TM_SEARCH_ID =#tm_search_id#
+	</select>
+
+	<select id="listScrap" parameterClass="String" resultClass="ScrapVO">
+	select * from tm_scrab where tm_id = #tm_id#
+	</select>
+	
+</sqlMap>			
+
